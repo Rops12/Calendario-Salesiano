@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { CalendarEvent, EventFormData } from '@/types/calendar';
 import { ServiceContainer } from '@/services/ServiceContainer';
 
-// Mock data for demonstration - will be migrated to database
+// Mock data for demonstration - will be populated in database
 const mockEvents: CalendarEvent[] = [
   {
     id: '1',
@@ -35,106 +35,6 @@ const mockEvents: CalendarEvent[] = [
     startDate: '2024-01-05',
     category: 'infantil',
     eventType: 'evento',
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z'
-  },
-  {
-    id: '4',
-    title: 'Início Fund. I',
-    description: 'Início das aulas do Ensino Fundamental I',
-    date: '2024-01-08',
-    startDate: '2024-01-08',
-    category: 'fundamental1',
-    eventType: 'evento',
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z'
-  },
-  {
-    id: '5',
-    title: 'Início Fund. II',
-    description: 'Início das aulas do Ensino Fundamental II',
-    date: '2024-01-10',
-    startDate: '2024-01-10',
-    category: 'fundamental2',
-    eventType: 'evento',
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z'
-  },
-  {
-    id: '6',
-    title: 'Início Ens. Médio',
-    description: 'Início das aulas do Ensino Médio',
-    date: '2024-01-12',
-    startDate: '2024-01-12',
-    category: 'medio',
-    eventType: 'evento',
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z'
-  },
-  {
-    id: '7',
-    title: 'Missa Abertura',
-    description: 'Missa de abertura do ano letivo',
-    date: '2024-01-15',
-    startDate: '2024-01-15',
-    category: 'pastoral',
-    eventType: 'evento',
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z'
-  },
-  {
-    id: '8',
-    title: 'Torneio Esportivo',
-    description: 'Torneio interescolar de futebol',
-    date: '2024-01-20',
-    startDate: '2024-01-20',
-    category: 'esportes',
-    eventType: 'evento',
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z'
-  },
-  {
-    id: '9',
-    title: 'Workshop Robótica',
-    description: 'Workshop de programação e robótica',
-    date: '2024-01-22',
-    startDate: '2024-01-22',
-    category: 'robotica',
-    eventType: 'evento',
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z'
-  },
-  {
-    id: '10',
-    title: 'Feira do Livro',
-    description: 'Feira anual de livros da biblioteca',
-    date: '2024-01-26',
-    startDate: '2024-01-26',
-    category: 'biblioteca',
-    eventType: 'evento',
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z'
-  },
-  {
-    id: '11',
-    title: 'Atendimento NAP',
-    description: 'Atendimento psicopedagógico especializado',
-    date: '2024-01-29',
-    startDate: '2024-01-29',
-    category: 'nap',
-    eventType: 'evento',
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z'
-  },
-  {
-    id: '12',
-    title: 'Recesso de Carnaval',
-    description: 'Recesso escolar para o período de carnaval',
-    date: '2024-02-12',
-    startDate: '2024-02-12',
-    endDate: '2024-02-14',
-    category: 'geral',
-    eventType: 'recesso',
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-01T00:00:00Z'
   }

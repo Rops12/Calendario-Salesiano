@@ -14,7 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      events: {
+        Row: {
+          category: Database["public"]["Enums"]["event_category"]
+          created_at: string
+          description: string | null
+          end_date: string | null
+          event_type: Database["public"]["Enums"]["event_type"]
+          id: string
+          start_date: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["event_category"]
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          event_type?: Database["public"]["Enums"]["event_type"]
+          id?: string
+          start_date: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["event_category"]
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          event_type?: Database["public"]["Enums"]["event_type"]
+          id?: string
+          start_date?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          is_admin: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id: string
+          is_admin?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_admin?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +82,18 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      event_category:
+        | "geral"
+        | "infantil"
+        | "fundamental1"
+        | "fundamental2"
+        | "medio"
+        | "pastoral"
+        | "esportes"
+        | "robotica"
+        | "biblioteca"
+        | "nap"
+      event_type: "normal" | "evento" | "feriado" | "recesso"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +220,20 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      event_category: [
+        "geral",
+        "infantil",
+        "fundamental1",
+        "fundamental2",
+        "medio",
+        "pastoral",
+        "esportes",
+        "robotica",
+        "biblioteca",
+        "nap",
+      ],
+      event_type: ["normal", "evento", "feriado", "recesso"],
+    },
   },
 } as const

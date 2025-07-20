@@ -1,9 +1,7 @@
 export interface User {
   id: string;
   email: string;
-  name: string;
-  role: 'admin' | 'coordinator' | 'teacher';
-  avatar?: string;
+  isAdmin?: boolean;
 }
 
 export interface LoginCredentials {
@@ -15,7 +13,6 @@ export interface IAuthService {
   login(credentials: LoginCredentials): Promise<User>;
   logout(): Promise<void>;
   getCurrentUser(): Promise<User | null>;
-  isAuthenticated(): Promise<boolean>;
 }
 
 export interface IAuthRepository {

@@ -1,7 +1,7 @@
 import { IEventService } from './interfaces/IEventService';
 import { IAuthService } from './interfaces/IAuthService';
-import { LocalStorageEventService } from './localStorage/LocalStorageEventService';
-import { LocalStorageAuthService } from './localStorage/LocalStorageAuthService';
+import { SupabaseEventService } from './supabase/SupabaseEventService';
+import { SupabaseAuthService } from './supabase/SupabaseAuthService';
 
 // This container will be easily replaced with Supabase implementations
 export class ServiceContainer {
@@ -11,10 +11,9 @@ export class ServiceContainer {
   private _authService: IAuthService;
 
   private constructor() {
-    // Currently using localStorage implementations
-    // Will be easily replaced with Supabase implementations
-    this._eventService = new LocalStorageEventService();
-    this._authService = new LocalStorageAuthService();
+    // Using Supabase implementations
+    this._eventService = new SupabaseEventService();
+    this._authService = new SupabaseAuthService();
   }
 
   static getInstance(): ServiceContainer {

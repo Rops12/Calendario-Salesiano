@@ -147,8 +147,8 @@ export function CalendarHeader({
             <div className="flex items-center gap-2 text-white">
               <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-white/10 rounded-lg backdrop-blur-sm border border-white/20">
                 <User className="h-4 w-4" />
-                <span className="text-sm font-medium">{user?.name}</span>
-                {user?.role === 'admin' && (
+                <span className="text-sm font-medium">{user?.email}</span>
+                {user?.isAdmin && (
                   <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Admin</span>
                 )}
               </div>

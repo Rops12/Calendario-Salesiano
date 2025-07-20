@@ -1,20 +1,21 @@
 import { useState, useEffect } from 'react';
-import { User, ActivityLog, CategoryConfig } from '@/types/admin';
+import { AdminUser, ActivityLog, CategoryConfig } from '@/types/admin';
+import { User } from '@/services/interfaces/IAuthService';
 import { EventCategory } from '@/types/calendar';
 import { eventCategories } from '@/types/calendar';
 import { useAuth } from './useAuth';
 
 export const useAdmin = () => {
   const { user: authUser } = useAuth();
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [categories, setCategories] = useState<CategoryConfig[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   
-  const currentUser: User = {
+  const currentUser: AdminUser = {
     id: authUser?.id || '1',
-    name: authUser?.name || 'Usuário',
+    name: 'Administrador',
     email: authUser?.email || 'user@salesiano.com.br',
-    role: authUser?.role === 'admin' ? 'admin' : 'viewer',
+    role: authUser?.isAdmin ? 'admin' : 'viewer',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
@@ -74,8 +75,8 @@ export const useAdmin = () => {
     ]);
   }, []);
 
-  const addUser = (userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newUser: User = {
+  const addUser = (userData: Omit<AdminUser, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const newUser: AdminUser = {
       ...userData,
       id: Date.now().toString(),
       createdAt: new Date().toISOString(),
@@ -91,7 +92,7 @@ export const useAdmin = () => {
     });
   };
 
-  const updateUser = (id: string, userData: Partial<User>) => {
+  const updateUser = (id: string, userData: Partial<AdminUser>) => {
     setUsers(prev => prev.map(user => 
       user.id === id 
         ? { ...user, ...userData, updatedAt: new Date().toISOString() }
@@ -173,14 +174,14 @@ export const useAdmin = () => {
       ...logData,
       id: Date.now().toString(),
       userId: currentUser.id,
-      userName: currentUser.name,
+      userName: authUser?.email || 'Administrador',
       timestamp: new Date().toISOString()
     };
     setActivityLogs(prev => [newLog, ...prev]);
   };
 
-  const isAdmin = authUser?.role === 'admin';
-  const canEdit = authUser?.role === 'admin' || currentUser.role === 'editor';
+  const isAdmin = authUser?.isAdmin || false;
+  const canEdit = authUser?.isAdmin || false;
 
   return {
     users,

@@ -32,7 +32,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useAdmin } from '@/hooks/useAdmin';
-import { User } from '@/types/admin';
+import { AdminUser } from '@/types/admin';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -52,7 +52,7 @@ export const UserManagement = () => {
   const { users, addUser, updateUser, deleteUser, currentUser } = useAdmin();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newUser, setNewUser] = useState<{ name: string; email: string; role: 'admin' | 'editor' | 'viewer' }>({ name: '', email: '', role: 'viewer' });
-  const [editForm, setEditForm] = useState<Partial<User> | null>(null);
+  const [editForm, setEditForm] = useState<Partial<AdminUser> | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
 
   const handleAddUser = () => {
@@ -63,7 +63,7 @@ export const UserManagement = () => {
     }
   };
 
-  const handleEditStart = (user: User) => {
+  const handleEditStart = (user: AdminUser) => {
     setEditingId(user.id);
     setEditForm({ name: user.name, email: user.email, role: user.role });
   };

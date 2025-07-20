@@ -7,20 +7,17 @@ const mockUsers: User[] = [
   {
     id: '1',
     email: 'admin@salesiano.com.br',
-    name: 'Administrador',
-    role: 'admin',
+    isAdmin: true,
   },
   {
     id: '2',
     email: 'coordenador@salesiano.com.br',
-    name: 'Coordenador',
-    role: 'coordinator',
+    isAdmin: false,
   },
   {
     id: '3',
     email: 'professor@salesiano.com.br',
-    name: 'Professor',
-    role: 'teacher',
+    isAdmin: false,
   },
 ];
 
