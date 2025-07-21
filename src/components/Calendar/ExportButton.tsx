@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download, Loader2, Calendar, Check } from 'lucide-react';
+import { Calendar, Check, Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { usePdfExport } from '@/hooks/usePdfExport';
@@ -18,30 +18,29 @@ export function ExportButton({ currentDate, events, selectedCategories }: Export
 
   const handleExportMonth = async () => {
     setIsExporting(true);
-    await exportMonthToPdf(currentDate); // Adicionado 'await'
+    await exportMonthToPdf(currentDate);
     setIsExporting(false);
   };
 
   const handleExportYear = async () => {
     setIsExporting(true);
     const year = getYear(currentDate);
-    await exportFullYearToPdf(year); // Adicionado 'await'
+    await exportFullYearToPdf(year);
     setIsExporting(false);
   };
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="text-white border-white/20 bg-white/10 hover:bg-white/20">
+        <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
           {isExporting ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <Download className="h-4 w-4 mr-2" />
+            <Download className="h-4 w-4" />
           )}
-          Exportar PDF
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent>
+      <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={handleExportMonth} disabled={isExporting}>
           <Calendar className="h-4 w-4 mr-2" />
           Exportar Mês Atual
