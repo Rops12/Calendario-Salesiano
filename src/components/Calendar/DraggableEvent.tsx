@@ -11,15 +11,15 @@ interface DraggableEventProps {
 
 export function DraggableEvent({ event, index, onClick, isDraggable = true }: DraggableEventProps) {
   const getEventTypeStyles = (eventType: EventType) => {
-    // Mantém fundos especiais para feriados e recessos, mas usa um fundo neutro para os demais
+    // Mantém fundos especiais para feriados e recessos
     switch (eventType) {
       case 'feriado':
-        return 'bg-red-100 text-red-800 border-red-200 font-semibold';
+        return 'bg-red-100 text-red-800 border-transparent font-semibold';
       case 'recesso':
-        return 'bg-orange-100 text-orange-800 border-orange-200 font-semibold';
+        return 'bg-orange-100 text-orange-800 border-transparent font-semibold';
       default:
-        // Estilo neutro para eventos normais e de evento, focando a cor no círculo
-        return 'bg-card hover:bg-muted/50 text-card-foreground border';
+        // Novo estilo padrão: fundo suave, sem bordas
+        return 'bg-muted/50 hover:bg-muted text-card-foreground border-transparent';
     }
   };
 
@@ -34,7 +34,7 @@ export function DraggableEvent({ event, index, onClick, isDraggable = true }: Dr
             "px-2 py-1 rounded text-xs font-medium",
             "transition-all duration-200 break-words whitespace-normal leading-tight min-h-[1.5rem]",
             isDraggable ? "cursor-pointer hover:scale-105 hover:shadow-medium" : "cursor-default",
-            getEventTypeStyles(event.eventType), // A função agora só precisa do tipo de evento
+            getEventTypeStyles(event.eventType),
             snapshot.isDragging && "shadow-strong scale-105 rotate-2 z-50"
           )}
           onClick={(e) => {
