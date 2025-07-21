@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { CalendarHeader } from '@/components/Calendar/CalendarHeader';
 import { CategoryFilters } from '@/components/Calendar/CategoryFilters';
 import { CalendarGrid } from '@/components/Calendar/CalendarGrid';
@@ -11,6 +11,7 @@ import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import { useAdmin } from '@/hooks/useAdmin';
 import { CalendarEvent, EventCategory, EventFormData } from '@/types/calendar';
 import { useToast } from '@/hooks/use-toast';
+import { CalendarSkeleton } from '@/components/Calendar/CalendarSkeleton'; // Importe o novo componente
 
 const Index = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -27,17 +28,29 @@ const Index = () => {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [transitionDirection, setTransitionDirection] = useState<'next' | 'prev' | null>(null);
 
-  const { events, createEvent, updateEvent, deleteEvent } = useCalendarEvents();
+  const { events, createEvent, updateEvent, deleteEvent, isLoading } = useCalendarEvents(); // Adicione isLoading
   const { isAdmin, canEdit } = useAdmin();
   const { toast } = useToast();
 
-  // Save selected categories to localStorage
   useEffect(() => {
     localStorage.setItem('selectedCategories', JSON.stringify(selectedCategories));
   }, [selectedCategories]);
+  
+  // Adiciona um pequeno timeout para a animação de transição
+  useEffect(() => {
+    if (transitionDirection) {
+      const timer = setTimeout(() => setTransitionDirection(null), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [transitionDirection]);
 
   const handleNavigate = (direction: 'prev' | 'next' | 'today') => {
+    if (direction !== 'today') {
+      setTransitionDirection(direction);
+    }
+    
     if (direction === 'today') {
       setCurrentDate(new Date());
       return;
@@ -68,9 +81,9 @@ const Index = () => {
     );
   };
 
-  const handleNewEvent = () => {
+  const handleNewEvent = (date?: Date) => {
     setSelectedEvent(null);
-    setSelectedDate(undefined);
+    setSelectedDate(date || new Date());
     setIsModalOpen(true);
   };
 
@@ -121,11 +134,40 @@ const Index = () => {
     }
   };
 
-  // Filter events based on search query
-  const filteredEvents = events.filter(event =>
+  const filteredEvents = useMemo(() => events.filter(event =>
     event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (event.description && event.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  ), [events, searchQuery]);
+
+  // Define a classe de animação com base na direção da transição
+  const animationClass = 
+    transitionDirection === 'next' ? 'animate-[slide-in-from-right_0.3s_ease-out]' :
+    transitionDirection === 'prev' ? 'animate-[slide-in-from-left_0.3s_ease-out]' :
+    'animate-fade-in';
+    
+  const renderView = () => {
+    if (isLoading) {
+      return <CalendarSkeleton />;
+    }
+    
+    const viewProps = {
+        currentDate,
+        events: filteredEvents,
+        selectedCategories,
+        onEventClick: handleEventClick,
+    };
+
+    switch (currentView) {
+      case 'month':
+        return <CalendarGrid {...viewProps} onDateClick={handleDateClick} onEventDrop={canEdit ? handleEventDrop : undefined} />;
+      case 'week':
+        return <WeekView {...viewProps} onDateClick={canEdit ? handleDateClick : undefined} onNewEventClick={canEdit ? handleNewEvent : undefined} />;
+      case 'agenda':
+        return <AgendaView {...viewProps} onNewEventClick={canEdit ? handleNewEvent : undefined} />;
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -149,35 +191,9 @@ const Index = () => {
       />
       
       <div className="p-6">
-        {currentView === 'month' && (
-          <CalendarGrid
-            currentDate={currentDate}
-            events={filteredEvents}
-            selectedCategories={selectedCategories}
-            onEventClick={handleEventClick}
-            onDateClick={handleDateClick}
-            onEventDrop={canEdit ? handleEventDrop : undefined}
-          />
-        )}
-        
-        {currentView === 'week' && (
-          <WeekView
-            currentDate={currentDate}
-            events={filteredEvents}
-            selectedCategories={selectedCategories}
-            onEventClick={handleEventClick}
-            onDateClick={canEdit ? handleDateClick : undefined}
-          />
-        )}
-        
-        {currentView === 'agenda' && (
-          <AgendaView
-            currentDate={currentDate}
-            events={filteredEvents}
-            selectedCategories={selectedCategories}
-            onEventClick={handleEventClick}
-          />
-        )}
+        <div key={currentDate.getTime()} className={animationClass}>
+          {renderView()}
+        </div>
       </div>
 
       <EventModal
