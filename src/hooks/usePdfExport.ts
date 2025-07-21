@@ -1,4 +1,4 @@
-import { jsPDF } from 'jspdf';
+import jsPDF from 'jspdf'; // ESTA LINHA FOI CORRIGIDA
 import 'jspdf-autotable';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, getYear, getMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -19,7 +19,7 @@ export const usePdfExport = (
   selectedCategories: EventCategory[]
 ) => {
   const exportFullYearToPdf = (year: number) => {
-    const doc = new jsPDF('p', 'pt', 'a4');
+    const doc = new jsPDF('p', 'pt', 'a4'); // Esta chamada agora funcionará
     const filteredEvents = allEvents.filter(event => selectedCategories.includes(event.category));
 
     doc.setFontSize(24);
@@ -35,7 +35,7 @@ export const usePdfExport = (
   };
   
   const exportMonthToPdf = (currentDate: Date) => {
-    const doc = new jsPDF('p', 'pt', 'a4');
+    const doc = new jsPDF('p', 'pt', 'a4'); // E esta também
     const filteredEvents = allEvents.filter(event => selectedCategories.includes(event.category));
     
     generateMonthPage(doc, currentDate, filteredEvents);
@@ -57,7 +57,6 @@ export const usePdfExport = (
       gridEndDate.setDate(gridEndDate.getDate() + (6 - getDay(gridEndDate)));
     }
     
-    // Garante que o calendário tenha sempre 6 semanas para um layout consistente
     const daysInGrid = eachDayOfInterval({ start: gridStartDate, end: gridEndDate });
     while (daysInGrid.length < 42) {
         gridEndDate.setDate(gridEndDate.getDate() + 1);
@@ -76,7 +75,6 @@ export const usePdfExport = (
     const body = [];
     let week: any[] = [];
     daysInGrid.forEach((day, index) => {
-      // Garantindo que sempre passamos um objeto para a célula
       const dayData = {
         date: day,
         events: getEventsForDate(day),
@@ -104,33 +102,27 @@ export const usePdfExport = (
         halign: 'center',
       },
       styles: {
-        cellPadding: 0, // Remove o padding padrão para termos controle total
-        minCellHeight: 65, // Aumenta a altura da célula para caber os eventos
+        cellPadding: 0,
+        minCellHeight: 65,
       },
-      // Este é o hook principal para desenhar o conteúdo customizado
       didDrawCell: (data) => {
-        // Ignora o cabeçalho
         if (data.section === 'head') return;
         
-        // Assegura que temos os dados brutos da célula
         const dayData = data.cell.raw as { date: Date; events: CalendarEvent[]; isCurrentMonth: boolean };
         if (!dayData || !dayData.date) return;
 
         const { date, events, isCurrentMonth } = dayData;
         const dayNumber = format(date, 'd');
 
-        // Pinta o fundo da célula de cinza claro se não for do mês atual
         if (!isCurrentMonth) {
-            doc.setFillColor(243, 244, 246); // Cor #f3f4f6
+            doc.setFillColor(243, 244, 246);
             doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F');
         }
 
-        // Desenha o número do dia
         doc.setTextColor(isCurrentMonth ? '#111827' : '#9ca3af');
         doc.setFontSize(10);
         doc.text(dayNumber, data.cell.x + 5, data.cell.y + 12);
 
-        // Desenha os eventos
         let eventY = data.cell.y + 20;
         const eventX = data.cell.x + 4;
         const eventWidth = data.cell.width - 8;
@@ -162,7 +154,6 @@ export const usePdfExport = (
           doc.text(`+${events.length - maxEvents} mais...`, eventX + 4, eventY + 9);
         }
       },
-      // Remove o texto padrão para que apenas nosso desenho customizado apareça
       willDrawCell: (data) => {
         if (data.section === 'body') {
             data.cell.text = [];
