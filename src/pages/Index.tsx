@@ -39,7 +39,7 @@ const Index = () => {
     return 'month';
   });
 
-  const [isInitialLoad, setIsInitialLoad] = useState(true); // Novo estado para o carregamento inicial
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [selectedCategories, setSelectedCategories] = useState<EventCategory[]>(() => {
     const saved = localStorage.getItem('selectedCategories');
     return saved ? JSON.parse(saved) : [
@@ -56,11 +56,10 @@ const Index = () => {
   const [isCommandOpen, setIsCommandOpen] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState<'next' | 'prev' | null>(null);
 
-  const { events, isLoading } = useCalendarEvents();
+  const { events, isLoading, createEvent, updateEvent, deleteEvent } = useCalendarEvents();
   const { isAdmin, canEdit } = useAdmin();
   const { toast } = useToast();
 
-  // Efeito para controlar APENAS o carregamento inicial
   useEffect(() => {
     if (!isLoading && isInitialLoad) {
       setIsInitialLoad(false);
@@ -155,7 +154,6 @@ const Index = () => {
 
   const handleSaveEvent = (data: EventFormData) => {
     if (!canEdit) return;
-    
     if (selectedEvent) {
       updateEvent(selectedEvent.id, data);
     } else {
@@ -170,21 +168,13 @@ const Index = () => {
 
   const handleEventDrop = (eventId: string, newDate: string) => {
     if (!canEdit) return;
-    
     const event = events.find(e => e.id === eventId);
     if (event) {
       updateEvent(eventId, { 
-        title: event.title,
-        description: event.description || '',
+        ...event,
         startDate: newDate,
-        endDate: event.endDate,
-        category: event.category,
-        eventType: event.eventType
       });
-      toast({
-        title: "Evento reagendado",
-        description: "O evento foi movido com sucesso.",
-      });
+      toast({ title: "Evento reagendado", description: "O evento foi movido com sucesso." });
     }
   };
 
@@ -199,7 +189,6 @@ const Index = () => {
     'animate-fade-in';
     
   const renderView = () => {
-    // AQUI ESTÁ A MUDANÇA: Usar o novo estado `isInitialLoad`
     if (isInitialLoad) {
       return <CalendarSkeleton />;
     }
@@ -296,4 +285,3 @@ const Index = () => {
 };
 
 export default Index;
-
