@@ -5,6 +5,8 @@ import { ViewSwitcher, CalendarView } from './ViewSwitcher';
 import { ExportButton } from './ExportButton';
 import { CalendarEvent, EventCategory } from '@/types/calendar';
 import { useAuth } from '@/hooks/useAuth';
+import { format, startOfWeek, endOfWeek } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface CalendarHeaderProps {
   currentDate: Date;
@@ -35,11 +37,26 @@ export function CalendarHeader({
 }: CalendarHeaderProps) {
   const { user, logout } = useAuth();
   
-  const formatMonthYear = (date: Date) => {
-    return date.toLocaleDateString('pt-BR', { 
-      month: 'long', 
-      year: 'numeric' 
-    });
+  const formatDateDisplay = (date: Date, view: CalendarView) => {
+    switch(view) {
+      case 'month':
+        return format(date, 'MMMM \'de\' yyyy', { locale: ptBR });
+      case 'week': {
+        const start = startOfWeek(date, { locale: ptBR });
+        const end = endOfWeek(date, { locale: ptBR });
+        if (start.getMonth() === end.getMonth()) {
+          return `${format(start, 'd')} - ${format(end, 'd \'de\' MMMM \'de\' yyyy', { locale: ptBR })}`;
+        }
+        if (start.getFullYear() !== end.getFullYear()) {
+          return `${format(start, 'd \'de\' MMM \'de\' yyyy', { locale: ptBR })} - ${format(end, 'd \'de\' MMM \'de\' yyyy', { locale: ptBR })}`;
+        }
+        return `${format(start, 'd \'de\' MMM', { locale: ptBR })} - ${format(end, 'd \'de\' MMM \'de\' yyyy', { locale: ptBR })}`;
+      }
+      case 'agenda':
+        return format(date, 'd \'de\' MMMM \'de\' yyyy', { locale: ptBR });
+      default:
+        return format(date, 'MMMM \'de\' yyyy', { locale: ptBR });
+    }
   };
 
   const handleLogout = async () => {
@@ -87,8 +104,8 @@ export function CalendarHeader({
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               
-              <h2 className="text-xl font-semibold text-white min-w-[200px] text-center capitalize transition-all duration-300">
-                {formatMonthYear(currentDate)}
+              <h2 className="text-xl font-semibold text-white min-w-[280px] text-center capitalize transition-all duration-300">
+                {formatDateDisplay(currentDate, currentView)}
               </h2>
               
               <Button 
