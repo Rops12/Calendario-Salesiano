@@ -10,4 +10,10 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // SEÇÃO 'build' AJUSTADA
+  build: {
+    rollupOptions: {
+      external: [], // A lista de dependências externas agora está vazia
+    }
+  }
 })
