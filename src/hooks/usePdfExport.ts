@@ -1,17 +1,9 @@
-// NENHUMA importação de jsPDF aqui no topo do arquivo.
-
+// NENHUMA importação de jsPDF aqui no topo.
 import 'jspdf-autotable';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, getYear, getMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CalendarEvent, EventCategory, eventCategories } from '@/types/calendar';
-import { jsPDF } from 'jspdf'; // Apenas para a tipagem
-
-// A declaração do módulo é um pouco diferente agora
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-  }
-}
+import { jsPDF } from 'jspdf'; // A importação aqui é apenas para a TIPAGEM.
 
 const getCategoryData = (category: EventCategory) => {
   return eventCategories.find(cat => cat.value === category);
@@ -21,9 +13,8 @@ export const usePdfExport = (
   allEvents: CalendarEvent[],
   selectedCategories: EventCategory[]
 ) => {
-  // A função agora é 'async'
   const exportFullYearToPdf = async (year: number) => {
-    // A MUDANÇA PRINCIPAL: importação dinâmica
+    // Importação dinâmica e robusta
     const { default: jsPDF } = await import('jspdf');
     
     const doc = new jsPDF('p', 'pt', 'a4');
@@ -37,13 +28,11 @@ export const usePdfExport = (
       if (i > 0) doc.addPage();
       generateMonthPage(doc, currentDate, filteredEvents);
     }
-
     doc.save(`calendario-completo-${year}.pdf`);
   };
   
-  // A função agora é 'async'
   const exportMonthToPdf = async (currentDate: Date) => {
-    // A MUDANÇA PRINCIPAL: importação dinâmica
+    // Importação dinâmica e robusta
     const { default: jsPDF } = await import('jspdf');
 
     const doc = new jsPDF('p', 'pt', 'a4');
@@ -56,24 +45,17 @@ export const usePdfExport = (
     doc.save(`calendario-${monthName}-${year}.pdf`);
   };
 
-  // Note que o tipo de 'doc' é jsPDF, vindo da importação de tipagem
   const generateMonthPage = (doc: jsPDF, currentDate: Date, events: CalendarEvent[]) => {
+    // O restante desta função permanece o mesmo da versão anterior...
     const monthName = format(currentDate, 'MMMM yyyy', { locale: ptBR });
     const daysOfWeek = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
     
     const gridStartDate = startOfMonth(currentDate);
     gridStartDate.setDate(gridStartDate.getDate() - getDay(gridStartDate));
-    
-    const gridEndDate = endOfMonth(currentDate);
-    if (getDay(gridEndDate) !== 6) {
-      gridEndDate.setDate(gridEndDate.getDate() + (6 - getDay(gridEndDate)));
-    }
+    const gridEndDate = new Date(gridStartDate);
+    gridEndDate.setDate(gridEndDate.getDate() + 41);
     
     const daysInGrid = eachDayOfInterval({ start: gridStartDate, end: gridEndDate });
-    while (daysInGrid.length < 42) {
-        gridEndDate.setDate(gridEndDate.getDate() + 1);
-        daysInGrid.push(new Date(gridEndDate));
-    }
 
     const getEventsForDate = (date: Date) => {
       const dateStr = format(date, 'yyyy-MM-dd');
@@ -107,59 +89,36 @@ export const usePdfExport = (
       head: [daysOfWeek],
       body: body,
       theme: 'grid',
-      headStyles: {
-        fillColor: [3, 105, 161],
-        textColor: [255, 255, 255],
-        fontStyle: 'bold',
-        halign: 'center',
-      },
-      styles: {
-        cellPadding: 0,
-        minCellHeight: 65,
-      },
+      headStyles: { fillColor: [3, 105, 161], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+      styles: { cellPadding: 0, minCellHeight: 65 },
       didDrawCell: (data) => {
         if (data.section === 'head') return;
-        
         const dayData = data.cell.raw as { date: Date; events: CalendarEvent[]; isCurrentMonth: boolean };
         if (!dayData || !dayData.date) return;
-
         const { date, events, isCurrentMonth } = dayData;
         const dayNumber = format(date, 'd');
-
         if (!isCurrentMonth) {
             doc.setFillColor(243, 244, 246);
             doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F');
         }
-
         doc.setTextColor(isCurrentMonth ? '#111827' : '#9ca3af');
         doc.setFontSize(10);
         doc.text(dayNumber, data.cell.x + 5, data.cell.y + 12);
-
         let eventY = data.cell.y + 20;
-        const eventX = data.cell.x + 4;
-        const eventWidth = data.cell.width - 8;
-        const eventHeight = 14;
-        const maxEvents = 3;
-
+        const eventX = data.cell.x + 4, eventWidth = data.cell.width - 8, eventHeight = 14, maxEvents = 3;
         events.slice(0, maxEvents).forEach((event) => {
           if (eventY + eventHeight > data.cell.y + data.cell.height - 5) return;
-
           const categoryData = getCategoryData(event.category);
           const color = categoryData?.colorHex || '#d1d5db';
-          
           doc.setFillColor(color);
           doc.roundedRect(eventX, eventY, eventWidth, eventHeight, 3, 3, 'F');
-          
           doc.setTextColor('#ffffff');
           doc.setFontSize(8);
           doc.setFont('helvetica', 'bold');
-          
           const truncatedTitle = doc.splitTextToSize(event.title, eventWidth - 8);
           doc.text(truncatedTitle[0], eventX + 4, eventY + 9);
-          
           eventY += eventHeight + 4;
         });
-
         if (events.length > maxEvents) {
           doc.setTextColor('#6b7280');
           doc.setFontSize(7);
@@ -167,9 +126,7 @@ export const usePdfExport = (
         }
       },
       willDrawCell: (data) => {
-        if (data.section === 'body') {
-            data.cell.text = [];
-        }
+        if (data.section === 'body') data.cell.text = [];
       }
     });
   };
