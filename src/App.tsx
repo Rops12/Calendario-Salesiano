@@ -26,7 +26,7 @@ const App = () => (
             </ProtectedRoute>
           } />
 
-          {/* Nova rota para lidar com a visualização e data na URL */}
+          {/* Rota ADICIONADA para lidar com a visualização e data na URL */}
           <Route path="/:view/:date" element={
             <ProtectedRoute>
               <Index />
