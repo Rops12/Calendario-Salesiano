@@ -10,8 +10,8 @@ interface CalendarGridProps {
   events: CalendarEvent[];
   selectedCategories: EventCategory[];
   onEventClick: (event: CalendarEvent) => void;
-  onDateClick: (date: Date) => void; // Agora abre o painel de visualização
-  onAddNewEvent: (date: Date) => void; // Para o novo botão "+"
+  onDateClick: (date: Date) => void;
+  onAddNewEvent: (date: Date) => void;
   onEventDrop?: (eventId: string, newDate: string) => void;
 }
 
@@ -60,6 +60,27 @@ export function CalendarGrid({
       return dateStr >= eventStartDate && dateStr <= eventEndDate && selectedCategories.includes(event.category);
     });
   };
+
+  const getSpecialEventType = (date: Date): 'feriado' | 'recesso' | 'evento' | null => {
+    const dayEvents = getEventsForDate(date);
+    if (dayEvents.some(e => e.eventType === 'feriado')) return 'feriado';
+    if (dayEvents.some(e => e.eventType === 'recesso')) return 'recesso';
+    if (dayEvents.some(e => e.eventType === 'evento')) return 'evento';
+    return null;
+  };
+
+  const getDayBackgroundStyles = (eventType: string | null) => {
+    switch (eventType) {
+      case 'feriado':
+        return 'bg-destructive/10';
+      case 'recesso':
+        return 'bg-category-esportes/10'; // Laranja
+      case 'evento':
+        return 'bg-category-fundamental1/10'; // Verde
+      default:
+        return '';
+    }
+  };
   
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination || !onEventDrop) return;
@@ -93,6 +114,7 @@ export function CalendarGrid({
             {days.map((date, index) => {
               const dayEvents = getEventsForDate(date);
               const dateStr = date.toISOString().split('T')[0];
+              const specialEventType = getSpecialEventType(date);
               
               return (
                 <Droppable droppableId={`day-${dateStr}`} key={index}>
@@ -103,7 +125,10 @@ export function CalendarGrid({
                       className={cn(
                         "group relative min-h-[120px] p-3 rounded-lg bg-card shadow-soft cursor-pointer transition-all duration-200 hover:shadow-strong hover:-translate-y-1",
                         !isCurrentMonth(date) && "bg-muted/40 text-muted-foreground/70",
-                        isToday(date) && "bg-primary/10 ring-2 ring-primary/40",
+                        // Aplica o estilo do dia atual somente se não for um dia com evento especial
+                        !specialEventType && isToday(date) && "bg-primary/10 ring-2 ring-primary/40",
+                        // Aplica o novo estilo para dias com eventos especiais
+                        specialEventType && getDayBackgroundStyles(specialEventType),
                       )}
                       onClick={() => onDateClick(date)}
                     >
@@ -112,7 +137,7 @@ export function CalendarGrid({
                         size="icon"
                         className="absolute top-1 right-1 h-7 w-7 rounded-full opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
                         onClick={(e) => {
-                          e.stopPropagation(); // Impede que o onDateClick seja acionado
+                          e.stopPropagation();
                           onAddNewEvent(date);
                         }}
                         aria-label="Adicionar novo evento"
