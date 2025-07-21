@@ -70,14 +70,13 @@ export function CalendarGrid({
   };
 
   const getDayBackgroundStyles = (eventType: string | null) => {
-    // Usando cores mais suaves (opacidade de 5%)
     switch (eventType) {
       case 'feriado':
-        return 'bg-destructive/5';
+        return 'bg-destructive/10';
       case 'recesso':
-        return 'bg-category-esportes/5'; // Laranja suave
+        return 'bg-category-esportes/10'; // Laranja
       case 'evento':
-        return 'bg-category-fundamental1/5'; // Verde suave
+        return 'bg-category-fundamental1/10'; // Verde
       default:
         return '';
     }
@@ -126,7 +125,9 @@ export function CalendarGrid({
                       className={cn(
                         "group relative min-h-[120px] p-3 rounded-lg bg-card shadow-soft cursor-pointer transition-all duration-200 hover:shadow-strong hover:-translate-y-1",
                         !isCurrentMonth(date) && "bg-muted/40 text-muted-foreground/70",
+                        // Aplica o estilo do dia atual somente se não for um dia com evento especial
                         !specialEventType && isToday(date) && "bg-primary/10 ring-2 ring-primary/40",
+                        // Aplica o novo estilo para dias com eventos especiais
                         specialEventType && getDayBackgroundStyles(specialEventType),
                       )}
                       onClick={() => onDateClick(date)}
