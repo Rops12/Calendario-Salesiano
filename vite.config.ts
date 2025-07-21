@@ -10,10 +10,10 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // ADICIONE ESTA SEÇÃO 'build' COMPLETA
+  // SEÇÃO 'build' AJUSTADA
   build: {
     rollupOptions: {
-      external: ['jspdf'], // Apenas jspdf aqui
+      external: [], // A lista de dependências externas agora está vazia
     }
   }
 })
