@@ -1,17 +1,15 @@
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, getYear, getMonth, addMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, getYear, getMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CalendarEvent, EventCategory, eventCategories } from '@/types/calendar';
 
-// Adicionando uma interface para o AutoTable poder ser estendido
 declare module 'jspdf' {
   interface jsPDF {
     autoTable: (options: any) => jsPDF;
   }
 }
 
-// Helper para obter os dados de uma categoria (incluindo a cor)
 const getCategoryData = (category: EventCategory) => {
   return eventCategories.find(cat => cat.value === category);
 };
@@ -29,9 +27,7 @@ export const usePdfExport = (
 
     for (let i = 0; i < 12; i++) {
       const currentDate = new Date(year, i, 1);
-      if (i > 0) {
-        doc.addPage();
-      }
+      if (i > 0) doc.addPage();
       generateMonthPage(doc, currentDate, filteredEvents);
     }
 
@@ -53,17 +49,20 @@ export const usePdfExport = (
     const monthName = format(currentDate, 'MMMM yyyy', { locale: ptBR });
     const daysOfWeek = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
     
-    const startOfMonthDate = startOfMonth(currentDate);
-    const endOfMonthDate = endOfMonth(currentDate);
+    const gridStartDate = startOfMonth(currentDate);
+    gridStartDate.setDate(gridStartDate.getDate() - getDay(gridStartDate));
     
-    // Calcula o início e o fim da grade para incluir dias de outros meses
-    const gridStartDate = new Date(startOfMonthDate);
-    gridStartDate.setDate(gridStartDate.getDate() - getDay(startOfMonthDate));
+    const gridEndDate = endOfMonth(currentDate);
+    if (getDay(gridEndDate) !== 6) {
+      gridEndDate.setDate(gridEndDate.getDate() + (6 - getDay(gridEndDate)));
+    }
     
-    const gridEndDate = new Date(endOfMonthDate);
-    gridEndDate.setDate(gridEndDate.getDate() + (6 - getDay(endOfMonthDate)));
-
-    const days = eachDayOfInterval({ start: gridStartDate, end: gridEndDate });
+    // Garante que o calendário tenha sempre 6 semanas para um layout consistente
+    const daysInGrid = eachDayOfInterval({ start: gridStartDate, end: gridEndDate });
+    while (daysInGrid.length < 42) {
+        gridEndDate.setDate(gridEndDate.getDate() + 1);
+        daysInGrid.push(new Date(gridEndDate));
+    }
 
     const getEventsForDate = (date: Date) => {
       const dateStr = format(date, 'yyyy-MM-dd');
@@ -76,7 +75,8 @@ export const usePdfExport = (
     
     const body = [];
     let week: any[] = [];
-    days.forEach((day, index) => {
+    daysInGrid.forEach((day, index) => {
+      // Garantindo que sempre passamos um objeto para a célula
       const dayData = {
         date: day,
         events: getEventsForDate(day),
@@ -98,70 +98,75 @@ export const usePdfExport = (
       body: body,
       theme: 'grid',
       headStyles: {
-        fillColor: [3, 105, 161], // Um azul escuro para o cabeçalho
+        fillColor: [3, 105, 161],
         textColor: [255, 255, 255],
         fontStyle: 'bold',
         halign: 'center',
       },
       styles: {
-        cellPadding: 6,
-        minCellHeight: 60, // Aumenta a altura da célula para caber os eventos
+        cellPadding: 0, // Remove o padding padrão para termos controle total
+        minCellHeight: 65, // Aumenta a altura da célula para caber os eventos
       },
+      // Este é o hook principal para desenhar o conteúdo customizado
       didDrawCell: (data) => {
+        // Ignora o cabeçalho
+        if (data.section === 'head') return;
+        
+        // Assegura que temos os dados brutos da célula
         const dayData = data.cell.raw as { date: Date; events: CalendarEvent[]; isCurrentMonth: boolean };
-        if (!dayData) return;
+        if (!dayData || !dayData.date) return;
 
         const { date, events, isCurrentMonth } = dayData;
         const dayNumber = format(date, 'd');
 
-        // Define a cor do número do dia (cinza para dias fora do mês)
+        // Pinta o fundo da célula de cinza claro se não for do mês atual
+        if (!isCurrentMonth) {
+            doc.setFillColor(243, 244, 246); // Cor #f3f4f6
+            doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F');
+        }
+
+        // Desenha o número do dia
         doc.setTextColor(isCurrentMonth ? '#111827' : '#9ca3af');
         doc.setFontSize(10);
-        
-        // Desenha o número do dia no canto superior esquerdo da célula
-        doc.text(dayNumber, data.cell.x + 5, data.cell.y + 10);
+        doc.text(dayNumber, data.cell.x + 5, data.cell.y + 12);
 
-        // --- A MÁGICA ACONTECE AQUI: DESENHANDO OS EVENTOS ---
-        let eventY = data.cell.y + 20; // Posição inicial Y para a primeira pílula de evento
+        // Desenha os eventos
+        let eventY = data.cell.y + 20;
         const eventX = data.cell.x + 4;
         const eventWidth = data.cell.width - 8;
         const eventHeight = 14;
-        const maxEvents = 3; // Limita o número de eventos por dia para não sobrecarregar
+        const maxEvents = 3;
 
-        events.slice(0, maxEvents).forEach((event, index) => {
-          if (eventY + eventHeight > data.cell.y + data.cell.height) return; // Não desenha se passar da célula
+        events.slice(0, maxEvents).forEach((event) => {
+          if (eventY + eventHeight > data.cell.y + data.cell.height - 5) return;
 
           const categoryData = getCategoryData(event.category);
-          const color = categoryData?.colorHex || '#d1d5db'; // Cor padrão cinza
+          const color = categoryData?.colorHex || '#d1d5db';
           
-          // Desenha a "pílula" colorida
           doc.setFillColor(color);
           doc.roundedRect(eventX, eventY, eventWidth, eventHeight, 3, 3, 'F');
           
-          // Escreve o título do evento
-          doc.setTextColor('#ffffff'); // Texto branco para melhor contraste
+          doc.setTextColor('#ffffff');
           doc.setFontSize(8);
           doc.setFont('helvetica', 'bold');
           
-          // Trunca o texto se for muito longo para caber na pílula
-          const truncatedTitle = doc.splitTextToSize(event.title, eventWidth - 6);
-          doc.text(truncatedTitle[0], eventX + 3, eventY + 9, {
-            maxWidth: eventWidth - 6,
-          });
+          const truncatedTitle = doc.splitTextToSize(event.title, eventWidth - 8);
+          doc.text(truncatedTitle[0], eventX + 4, eventY + 9);
           
-          eventY += eventHeight + 4; // Move a posição Y para o próximo evento
+          eventY += eventHeight + 4;
         });
 
         if (events.length > maxEvents) {
           doc.setTextColor('#6b7280');
           doc.setFontSize(7);
-          doc.text(`+${events.length - maxEvents} mais...`, eventX + 3, eventY + 9);
+          doc.text(`+${events.length - maxEvents} mais...`, eventX + 4, eventY + 9);
         }
       },
-      // Formata o conteúdo da célula para não exibir o objeto [object Object]
-      // Apenas o custom `didDrawCell` será responsável por renderizar
+      // Remove o texto padrão para que apenas nosso desenho customizado apareça
       willDrawCell: (data) => {
-        data.cell.text = [''];
+        if (data.section === 'body') {
+            data.cell.text = [];
+        }
       }
     });
   };
