@@ -1,4 +1,4 @@
-import { Calendar, ChevronLeft, ChevronRight, Plus, Search, Settings, LogOut, User } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Search, Settings, LogOut, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ViewSwitcher, CalendarView } from './ViewSwitcher';
@@ -7,10 +7,14 @@ import { CalendarEvent, EventCategory } from '@/types/calendar';
 import { useAuth } from '@/hooks/useAuth';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { useState } from 'react';
 
 interface CalendarHeaderProps {
   currentDate: Date;
   onNavigate: (direction: 'prev' | 'next' | 'today') => void;
+  onDateSelect: (date: Date | undefined) => void;
   onNewEvent?: () => void;
   onSearch: (query: string) => void;
   searchQuery: string;
@@ -25,6 +29,7 @@ interface CalendarHeaderProps {
 export function CalendarHeader({ 
   currentDate, 
   onNavigate, 
+  onDateSelect,
   onNewEvent, 
   onSearch, 
   searchQuery,
@@ -36,14 +41,15 @@ export function CalendarHeader({
   isAdmin
 }: CalendarHeaderProps) {
   const { user, logout } = useAuth();
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   
   const formatDateDisplay = (date: Date, view: CalendarView) => {
     switch(view) {
       case 'month':
         return format(date, 'MMMM \'de\' yyyy', { locale: ptBR });
       case 'week': {
-        const start = startOfWeek(date, { locale: ptBR });
-        const end = endOfWeek(date, { locale: ptBR });
+        const start = startOfWeek(date, { locale: ptBR, weekStartsOn: 0 }); // Domingo
+        const end = endOfWeek(date, { locale: ptBR, weekStartsOn: 0 }); // Sábado
         if (start.getMonth() === end.getMonth()) {
           return `${format(start, 'd')} - ${format(end, 'd \'de\' MMMM \'de\' yyyy', { locale: ptBR })}`;
         }
@@ -59,6 +65,13 @@ export function CalendarHeader({
     }
   };
 
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      onDateSelect(date);
+      setIsDatePickerOpen(false);
+    }
+  };
+
   const handleLogout = async () => {
     await logout();
   };
@@ -69,7 +82,7 @@ export function CalendarHeader({
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/10 rounded-lg">
-              <Calendar className="h-6 w-6 text-white" />
+              <CalendarIcon className="h-6 w-6 text-white" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white">
@@ -83,7 +96,7 @@ export function CalendarHeader({
           
           {onNewEvent && (
             <Button 
-              onClick={onNewEvent}
+              onClick={() => onNewEvent()}
               className="bg-white text-primary hover:bg-white/90 shadow-soft"
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -104,9 +117,21 @@ export function CalendarHeader({
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               
-              <h2 className="text-xl font-semibold text-white min-w-[280px] text-center capitalize transition-all duration-300">
-                {formatDateDisplay(currentDate, currentView)}
-              </h2>
+              <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                <PopoverTrigger asChild>
+                  <h2 className="text-xl font-semibold text-white min-w-[280px] text-center capitalize transition-all duration-300 cursor-pointer hover:bg-white/10 rounded-md px-3 py-1">
+                    {formatDateDisplay(currentDate, currentView)}
+                  </h2>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={currentDate}
+                    onSelect={handleDateSelect}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
               
               <Button 
                 variant="ghost" 
