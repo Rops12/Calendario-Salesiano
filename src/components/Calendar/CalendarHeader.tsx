@@ -48,8 +48,8 @@ export function CalendarHeader({
       case 'month':
         return format(date, 'MMMM \'de\' yyyy', { locale: ptBR });
       case 'week': {
-        const start = startOfWeek(date, { locale: ptBR, weekStartsOn: 0 }); // Domingo
-        const end = endOfWeek(date, { locale: ptBR, weekStartsOn: 0 }); // Sábado
+        const start = startOfWeek(date, { locale: ptBR, weekStartsOn: 0 });
+        const end = endOfWeek(date, { locale: ptBR, weekStartsOn: 0 });
         if (start.getMonth() === end.getMonth()) {
           return `${format(start, 'd')} - ${format(end, 'd \'de\' MMMM \'de\' yyyy', { locale: ptBR })}`;
         }
@@ -187,7 +187,6 @@ export function CalendarHeader({
               </Button>
             )}
 
-            {/* User Info */}
             <div className="flex items-center gap-2 text-white">
               <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-white/10 rounded-lg backdrop-blur-sm border border-white/20">
                 <User className="h-4 w-4" />
