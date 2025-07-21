@@ -1,20 +1,24 @@
 import { CalendarEvent, EventCategory, eventCategories } from '@/types/calendar';
 import { cn } from '@/lib/utils';
-import { format, isToday, isSameDay } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { CalendarX, Plus } from 'lucide-react'; // Importe ícones
+import { Button } from '@/components/ui/button'; // Importe o botão
 
 interface AgendaViewProps {
   currentDate: Date;
   events: CalendarEvent[];
   selectedCategories: EventCategory[];
   onEventClick: (event: CalendarEvent) => void;
+  onNewEventClick?: (date: Date) => void; // Nova propriedade
 }
 
 export function AgendaView({ 
   currentDate, 
   events, 
   selectedCategories, 
-  onEventClick 
+  onEventClick,
+  onNewEventClick
 }: AgendaViewProps) {
   const getEventsForDate = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
@@ -52,10 +56,17 @@ export function AgendaView({
 
           <div className="space-y-3">
             {todayEvents.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-muted-foreground text-lg">
-                  Nenhum evento encontrado para hoje
+              <div className="text-center py-12 flex flex-col items-center gap-4 border-2 border-dashed rounded-lg">
+                <CalendarX className="h-12 w-12 text-muted-foreground/50" />
+                <div className="text-muted-foreground text-lg font-medium">
+                  Nenhum evento para este dia
                 </div>
+                {onNewEventClick && (
+                  <Button onClick={() => onNewEventClick(currentDate)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar Evento
+                  </Button>
+                )}
               </div>
             ) : (
               todayEvents.map((event) => {
@@ -152,3 +163,4 @@ export function AgendaView({
     </div>
   );
 }
+
