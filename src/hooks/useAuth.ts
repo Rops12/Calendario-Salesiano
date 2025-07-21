@@ -12,38 +12,47 @@ export function useAuth() {
   const authService = ServiceContainer.getInstance().authService;
 
   useEffect(() => {
-    // Configurar listener de autenticação
+    // Configurar listener de autenticação primeiro
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (session?.user) {
+          // Usar setTimeout para evitar race conditions
+          setTimeout(async () => {
+            try {
+              const currentUser = await authService.getCurrentUser();
+              setUser(currentUser);
+            } catch (error) {
+              console.error('Error getting user:', error);
+              setUser(null);
+            } finally {
+              setIsLoading(false);
+            }
+          }, 0);
+        } else {
+          setUser(null);
+          setIsLoading(false);
+        }
+      }
+    );
+
+    // Verificar sessão inicial apenas depois do listener estar configurado
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setTimeout(async () => {
           try {
             const currentUser = await authService.getCurrentUser();
             setUser(currentUser);
           } catch (error) {
-            console.error('Error getting user:', error);
+            console.error('Error getting initial user:', error);
             setUser(null);
+          } finally {
+            setIsLoading(false);
           }
-        } else {
-          setUser(null);
-        }
+        }, 0);
+      } else {
         setIsLoading(false);
       }
-    );
-
-    // Verificar sessão inicial
-    const initializeAuth = async () => {
-      try {
-        const currentUser = await authService.getCurrentUser();
-        setUser(currentUser);
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initializeAuth();
+    });
 
     return () => subscription.unsubscribe();
   }, [authService]);

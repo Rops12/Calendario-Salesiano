@@ -27,29 +27,29 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { CategoryConfig } from '@/types/admin';
 
 const colorOptions = [
-  { name: 'Azul', value: 'category-geral' },
-  { name: 'Verde', value: 'category-infantil' },
-  { name: 'Amarelo', value: 'category-fundamental1' },
-  { name: 'Laranja', value: 'category-fundamental2' },
-  { name: 'Roxo', value: 'category-medio' },
-  { name: 'Rosa', value: 'category-pastoral' },
-  { name: 'Vermelho', value: 'category-esportes' },
-  { name: 'Ciano', value: 'category-robotica' },
-  { name: 'Marrom', value: 'category-biblioteca' },
-  { name: 'Cinza', value: 'category-nap' },
+  { name: 'Azul', value: 'hsl(215, 100%, 50%)', class: 'bg-blue-500' },
+  { name: 'Verde', value: 'hsl(142, 76%, 36%)', class: 'bg-green-500' },
+  { name: 'Amarelo', value: 'hsl(45, 93%, 47%)', class: 'bg-yellow-500' },
+  { name: 'Laranja', value: 'hsl(25, 95%, 53%)', class: 'bg-orange-500' },
+  { name: 'Roxo', value: 'hsl(262, 83%, 58%)', class: 'bg-purple-500' },
+  { name: 'Rosa', value: 'hsl(330, 81%, 60%)', class: 'bg-pink-500' },
+  { name: 'Vermelho', value: 'hsl(0, 84%, 60%)', class: 'bg-red-500' },
+  { name: 'Ciano', value: 'hsl(188, 94%, 42%)', class: 'bg-cyan-500' },
+  { name: 'Marrom', value: 'hsl(20, 14%, 46%)', class: 'bg-amber-800' },
+  { name: 'Cinza', value: 'hsl(215, 16%, 47%)', class: 'bg-gray-500' },
 ];
 
 export const CategoryManagement = () => {
   const { categories, addCategory, updateCategory, deleteCategory } = useAdmin();
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [newCategory, setNewCategory] = useState({ value: '', label: '', color: 'category-geral' });
+  const [newCategory, setNewCategory] = useState({ value: '', label: '', color: colorOptions[0].value });
   const [editForm, setEditForm] = useState<CategoryConfig | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
 
   const handleAddCategory = () => {
     if (newCategory.value && newCategory.label) {
       addCategory(newCategory);
-      setNewCategory({ value: '', label: '', color: 'category-geral' });
+      setNewCategory({ value: '', label: '', color: colorOptions[0].value });
       setShowAddForm(false);
     }
   };
@@ -103,6 +103,8 @@ export const CategoryManagement = () => {
                   const label = e.target.value;
                   const value = label
                     .toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
                     .replace(/[^a-z0-9\s]/g, '')
                     .replace(/\s+/g, '-')
                     .trim();
@@ -123,31 +125,22 @@ export const CategoryManagement = () => {
             </div>
             <div>
               <Label htmlFor="new-color">Cor</Label>
-              <select
-                id="new-color"
-                value={newCategory.color}
-                onChange={(e) => setNewCategory(prev => ({ ...prev, color: e.target.value }))}
-                className="w-full h-10 px-3 rounded-md border border-input bg-background"
-              >
-                {colorOptions.map(color => (
-                  <option key={color.value} value={color.value}>
-                    <div className="flex items-center gap-2">
-                      {color.name}
-                    </div>
-                  </option>
-                ))}
-              </select>
               <div className="flex flex-wrap gap-2 mt-2">
                 {colorOptions.map(color => (
                   <button
                     key={color.value}
                     type="button"
                     onClick={() => setNewCategory(prev => ({ ...prev, color: color.value }))}
-                    className={`flex items-center gap-2 px-3 py-1 rounded border text-xs ${
-                      newCategory.color === color.value ? 'ring-2 ring-primary' : ''
+                    className={`flex items-center gap-2 px-3 py-2 rounded border text-sm transition-all ${
+                      newCategory.color === color.value 
+                        ? 'ring-2 ring-primary bg-muted' 
+                        : 'hover:bg-muted/50'
                     }`}
                   >
-                    <div className={`w-3 h-3 rounded-full bg-${color.value.replace('category-', '')}-500`} />
+                    <div 
+                      className="w-4 h-4 rounded-full border border-border"
+                      style={{ backgroundColor: color.value }}
+                    />
                     {color.name}
                   </button>
                 ))}
@@ -208,22 +201,34 @@ export const CategoryManagement = () => {
               </TableCell>
               <TableCell>
                 {editingId === category.value ? (
-                  <select
-                    value={editForm?.color || ''}
-                    onChange={(e) => setEditForm(prev => prev ? { ...prev, color: e.target.value } : null)}
-                    className="h-8 px-2 rounded border border-input bg-background"
-                  >
+                  <div className="flex flex-wrap gap-1">
                     {colorOptions.map(color => (
-                      <option key={color.value} value={color.value}>
-                        {color.name}
-                      </option>
+                      <button
+                        key={color.value}
+                        type="button"
+                        onClick={() => setEditForm(prev => prev ? { ...prev, color: color.value } : null)}
+                        className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${
+                          editForm?.color === color.value ? 'ring-1 ring-primary' : ''
+                        }`}
+                      >
+                        <div 
+                          className="w-3 h-3 rounded-full border"
+                          style={{ backgroundColor: color.value }}
+                        />
+                      </button>
                     ))}
-                  </select>
-                ) : (
-                  <Badge variant="secondary" className={`bg-${category.color}/20 text-${category.color}`}>
-                    {colorOptions.find(c => c.value === category.color)?.name || category.color}
-                  </Badge>
-                )}
+                  </div>
+                 ) : (
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-4 h-4 rounded-full border border-border"
+                      style={{ backgroundColor: category.color }}
+                    />
+                    <Badge variant="secondary">
+                      {colorOptions.find(c => c.value === category.color)?.name || 'Personalizada'}
+                    </Badge>
+                  </div>
+                 )}
               </TableCell>
               <TableCell>
                 <Badge variant={category.isActive ? 'default' : 'secondary'}>

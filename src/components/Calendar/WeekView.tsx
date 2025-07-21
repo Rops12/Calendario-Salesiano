@@ -6,7 +6,7 @@ interface WeekViewProps {
   events: CalendarEvent[];
   selectedCategories: EventCategory[];
   onEventClick: (event: CalendarEvent) => void;
-  onDateClick: (date: Date) => void;
+  onDateClick?: (date: Date) => void;
 }
 
 export function WeekView({ 
@@ -60,7 +60,7 @@ export function WeekView({
                 "p-4 text-center border-r bg-muted/50 cursor-pointer hover:bg-muted transition-colors",
                 isToday(day) && "bg-primary/10 border-primary/20"
               )}
-              onClick={() => onDateClick(day)}
+                onClick={onDateClick ? () => onDateClick(day) : undefined}
             >
               <div className="font-medium text-sm text-muted-foreground">
                 {daysOfWeek[index]}

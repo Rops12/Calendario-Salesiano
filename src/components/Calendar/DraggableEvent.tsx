@@ -6,9 +6,10 @@ interface DraggableEventProps {
   event: CalendarEvent;
   index: number;
   onClick: (event: CalendarEvent) => void;
+  isDraggable?: boolean;
 }
 
-export function DraggableEvent({ event, index, onClick }: DraggableEventProps) {
+export function DraggableEvent({ event, index, onClick, isDraggable = true }: DraggableEventProps) {
   const getCategoryColor = (category: EventCategory) => {
     const categoryData = eventCategories.find(cat => cat.value === category);
     return categoryData?.color || 'category-geral';
@@ -41,16 +42,16 @@ export function DraggableEvent({ event, index, onClick }: DraggableEventProps) {
   
 
   return (
-    <Draggable draggableId={event.id} index={index}>
+    <Draggable draggableId={event.id} index={index} isDragDisabled={!isDraggable}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          {...provided.dragHandleProps}
+          {...(isDraggable ? provided.dragHandleProps : {})}
           className={cn(
-            "px-2 py-1 rounded text-xs font-medium cursor-pointer border",
-            "transition-all duration-200 hover:scale-105 hover:shadow-medium",
-            "break-words whitespace-normal leading-tight min-h-[1.5rem]",
+            "px-2 py-1 rounded text-xs font-medium border",
+            "transition-all duration-200 break-words whitespace-normal leading-tight min-h-[1.5rem]",
+            isDraggable ? "cursor-pointer hover:scale-105 hover:shadow-medium" : "cursor-default",
             getEventTypeStyles(event.eventType, event.category),
             snapshot.isDragging && "shadow-strong scale-105 rotate-2 z-50"
           )}

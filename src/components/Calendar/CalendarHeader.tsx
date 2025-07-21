@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 interface CalendarHeaderProps {
   currentDate: Date;
   onNavigate: (direction: 'prev' | 'next' | 'today') => void;
-  onNewEvent: () => void;
+  onNewEvent?: () => void;
   onSearch: (query: string) => void;
   searchQuery: string;
   currentView: CalendarView;
@@ -64,13 +64,15 @@ export function CalendarHeader({
             </div>
           </div>
           
-          <Button 
-            onClick={onNewEvent}
-            className="bg-white text-primary hover:bg-white/90 shadow-soft"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Evento
-          </Button>
+          {onNewEvent && (
+            <Button 
+              onClick={onNewEvent}
+              className="bg-white text-primary hover:bg-white/90 shadow-soft"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Evento
+            </Button>
+          )}
         </div>
 
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">

@@ -14,6 +14,77 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action: string
+          created_at: string
+          description: string
+          id: string
+          target: string
+          target_id: string
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          description: string
+          id?: string
+          target: string
+          target_id: string
+          user_id: string
+          user_name: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          description?: string
+          id?: string
+          target?: string
+          target_id?: string
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_categories: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          color: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           category: Database["public"]["Enums"]["event_category"]
@@ -56,6 +127,7 @@ export type Database = {
           email: string | null
           id: string
           is_admin: boolean
+          role: string | null
           updated_at: string
         }
         Insert: {
@@ -63,6 +135,7 @@ export type Database = {
           email?: string | null
           id: string
           is_admin?: boolean
+          role?: string | null
           updated_at?: string
         }
         Update: {
@@ -70,6 +143,7 @@ export type Database = {
           email?: string | null
           id?: string
           is_admin?: boolean
+          role?: string | null
           updated_at?: string
         }
         Relationships: []

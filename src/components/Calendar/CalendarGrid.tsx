@@ -8,7 +8,7 @@ interface CalendarGridProps {
   events: CalendarEvent[];
   selectedCategories: EventCategory[];
   onEventClick: (event: CalendarEvent) => void;
-  onDateClick: (date: Date) => void;
+  onDateClick?: (date: Date) => void;
   onEventDrop?: (eventId: string, newDate: string) => void;
 }
 
@@ -171,7 +171,7 @@ export function CalendarGrid({
                         specialEventType && getDayBackgroundStyles(specialEventType),
                         snapshot.isDraggingOver && "bg-primary/20 border-primary/50 scale-[1.01] shadow-medium ring-2 ring-primary/30"
                       )}
-                      onClick={() => onDateClick(date)}
+                      onClick={onDateClick ? () => onDateClick(date) : undefined}
                     >
                       {snapshot.isDraggingOver && (
                         <div className="absolute inset-0 border-2 border-dashed border-primary/60 rounded-lg bg-primary/5 flex items-center justify-center">
@@ -201,6 +201,7 @@ export function CalendarGrid({
                             event={event}
                             index={eventIndex}
                             onClick={onEventClick}
+                            isDraggable={!!onEventDrop}
                           />
                         ))}
                         

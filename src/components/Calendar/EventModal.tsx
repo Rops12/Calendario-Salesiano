@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 interface EventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: EventFormData) => void;
+  onSave?: (data: EventFormData) => void;
   onDelete?: (id: string) => void;
   event?: CalendarEvent | null;
   selectedDate?: Date;
@@ -79,14 +79,18 @@ export function EventModal({
       return;
     }
 
-    onSave(formData);
-    onClose();
-    
-    toast({
-      title: event ? "Evento atualizado" : "Evento criado",
-      description: event ? "O evento foi atualizado com sucesso." : "O evento foi criado com sucesso.",
-    });
+    if (onSave) {
+      onSave(formData);
+      onClose();
+      
+      toast({
+        title: event ? "Evento atualizado" : "Evento criado",
+        description: event ? "O evento foi atualizado com sucesso." : "O evento foi criado com sucesso.",
+      });
+    }
   };
+
+  const isReadOnly = !onSave && !onDelete;
 
   const handleDelete = () => {
     if (event && onDelete) {
@@ -105,7 +109,7 @@ export function EventModal({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            {event ? 'Editar Evento' : 'Novo Evento'}
+            {isReadOnly ? 'Visualizar Evento' : (event ? 'Editar Evento' : 'Novo Evento')}
           </DialogTitle>
         </DialogHeader>
 
@@ -118,6 +122,7 @@ export function EventModal({
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="Digite o título do evento"
               required
+              disabled={isReadOnly}
             />
           </div>
 
@@ -129,6 +134,7 @@ export function EventModal({
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Digite a descrição do evento (opcional)"
               rows={3}
+              disabled={isReadOnly}
             />
           </div>
 
@@ -140,6 +146,7 @@ export function EventModal({
               value={formData.startDate}
               onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
               required
+              disabled={isReadOnly}
             />
           </div>
 
@@ -151,6 +158,7 @@ export function EventModal({
               value={formData.endDate}
               onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
               min={formData.startDate}
+              disabled={isReadOnly}
             />
           </div>
 
@@ -159,6 +167,7 @@ export function EventModal({
             <Select
               value={formData.eventType}
               onValueChange={(value) => setFormData({ ...formData, eventType: value as EventType })}
+              disabled={isReadOnly}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o tipo" />
@@ -197,6 +206,7 @@ export function EventModal({
             <Select
               value={formData.category}
               onValueChange={(value) => setFormData({ ...formData, category: value as any })}
+              disabled={isReadOnly}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione uma categoria" />
@@ -230,7 +240,7 @@ export function EventModal({
 
           <div className="flex justify-between pt-4">
             <div>
-              {event && onDelete && (
+              {!isReadOnly && event && onDelete && (
                 <Button
                   type="button"
                   variant="destructive"
@@ -243,11 +253,13 @@ export function EventModal({
 
             <div className="flex gap-2">
               <Button type="button" variant="outline" onClick={onClose}>
-                Cancelar
+                {isReadOnly ? 'Fechar' : 'Cancelar'}
               </Button>
-              <Button type="submit">
-                {event ? 'Atualizar' : 'Criar'}
-              </Button>
+              {!isReadOnly && onSave && (
+                <Button type="submit">
+                  {event ? 'Atualizar' : 'Criar'}
+                </Button>
+              )}
             </div>
           </div>
         </form>

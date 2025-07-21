@@ -29,7 +29,7 @@ const Index = () => {
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
 
   const { events, createEvent, updateEvent, deleteEvent } = useCalendarEvents();
-  const { isAdmin } = useAdmin();
+  const { isAdmin, canEdit } = useAdmin();
   const { toast } = useToast();
 
   // Save selected categories to localStorage
@@ -74,6 +74,8 @@ const Index = () => {
   };
 
   const handleSaveEvent = (data: EventFormData) => {
+    if (!canEdit) return;
+    
     if (selectedEvent) {
       updateEvent(selectedEvent.id, data);
     } else {
@@ -82,10 +84,13 @@ const Index = () => {
   };
 
   const handleDeleteEvent = (id: string) => {
+    if (!canEdit) return;
     deleteEvent(id);
   };
 
   const handleEventDrop = (eventId: string, newDate: string) => {
+    if (!canEdit) return;
+    
     const event = events.find(e => e.id === eventId);
     if (event) {
       updateEvent(eventId, { 
@@ -114,7 +119,7 @@ const Index = () => {
       <CalendarHeader
         currentDate={currentDate}
         onNavigate={handleNavigate}
-        onNewEvent={handleNewEvent}
+        onNewEvent={canEdit ? handleNewEvent : undefined}
         onSearch={setSearchQuery}
         searchQuery={searchQuery}
         currentView={currentView}
@@ -138,7 +143,7 @@ const Index = () => {
             selectedCategories={selectedCategories}
             onEventClick={handleEventClick}
             onDateClick={handleDateClick}
-            onEventDrop={handleEventDrop}
+            onEventDrop={canEdit ? handleEventDrop : undefined}
           />
         )}
         
@@ -148,7 +153,7 @@ const Index = () => {
             events={filteredEvents}
             selectedCategories={selectedCategories}
             onEventClick={handleEventClick}
-            onDateClick={handleDateClick}
+            onDateClick={canEdit ? handleDateClick : undefined}
           />
         )}
         
@@ -165,8 +170,8 @@ const Index = () => {
       <EventModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveEvent}
-        onDelete={handleDeleteEvent}
+        onSave={canEdit ? handleSaveEvent : undefined}
+        onDelete={canEdit ? handleDeleteEvent : undefined}
         event={selectedEvent}
         selectedDate={selectedDate}
       />

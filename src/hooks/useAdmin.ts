@@ -1,187 +1,198 @@
 import { useState, useEffect } from 'react';
 import { AdminUser, ActivityLog, CategoryConfig } from '@/types/admin';
 import { User } from '@/services/interfaces/IAuthService';
-import { EventCategory } from '@/types/calendar';
-import { eventCategories } from '@/types/calendar';
 import { useAuth } from './useAuth';
+import { SupabaseAdminService } from '@/services/supabase/SupabaseAdminService';
 
 export const useAdmin = () => {
   const { user: authUser } = useAuth();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [categories, setCategories] = useState<CategoryConfig[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const adminService = new SupabaseAdminService();
   
   const currentUser: AdminUser = {
-    id: authUser?.id || '1',
-    name: 'Administrador',
-    email: authUser?.email || 'user@salesiano.com.br',
+    id: authUser?.id || '',
+    name: authUser?.email?.split('@')[0] || 'Usuário',
+    email: authUser?.email || '',
     role: authUser?.isAdmin ? 'admin' : 'viewer',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
 
   useEffect(() => {
-    // Initialize with default categories
-    const defaultCategories = eventCategories.map(cat => ({
-      value: cat.value,
-      label: cat.label,
-      color: cat.color,
-      isActive: true
-    }));
-    setCategories(defaultCategories);
+    if (authUser?.isAdmin) {
+      loadAdminData();
+    }
+  }, [authUser]);
 
-    // Load mock data
-    setUsers([
-      currentUser,
-      {
-        id: '2',
-        name: 'Professor Silva',
-        email: 'silva@escola.com',
-        role: 'editor',
-        createdAt: '2024-01-15T09:00:00Z',
-        updatedAt: '2024-01-15T09:00:00Z'
-      },
-      {
-        id: '3',
-        name: 'Secretária Maria',
-        email: 'maria@escola.com',
-        role: 'viewer',
-        createdAt: '2024-01-20T14:30:00Z',
-        updatedAt: '2024-01-20T14:30:00Z'
-      }
-    ]);
+  const loadAdminData = async () => {
+    try {
+      setIsLoading(true);
+      const [usersData, categoriesData, logsData] = await Promise.all([
+        adminService.getUsers(),
+        adminService.getCategories(),
+        adminService.getActivityLogs()
+      ]);
+      
+      setUsers(usersData);
+      setCategories(categoriesData);
+      setActivityLogs(logsData);
+    } catch (error) {
+      console.error('Error loading admin data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    setActivityLogs([
-      {
-        id: '1',
-        userId: '2',
-        userName: 'Professor Silva',
+  const addUser = async (userData: Omit<AdminUser, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      // Nota: Para criar usuários seria necessário usar o Supabase Auth Admin
+      // Por agora, apenas mostra mensagem informativa
+      console.log('Add user functionality requires Supabase Auth Admin API');
+      await addLog({
+        userId: currentUser.id,
+        userName: currentUser.email,
         action: 'create',
-        target: 'event',
-        targetId: 'event1',
-        description: 'Criou evento "Reunião de Pais"',
-        timestamp: '2024-01-25T10:00:00Z'
-      },
-      {
-        id: '2',
-        userId: '1',
-        userName: 'Administrador',
-        action: 'category_update',
-        target: 'category',
-        targetId: 'geral',
-        description: 'Alterou cor da categoria "Geral"',
-        timestamp: '2024-01-24T15:30:00Z'
+        target: 'user',
+        targetId: 'pending',
+        description: `Tentou criar usuário "${userData.name}"`
+      });
+    } catch (error) {
+      console.error('Error adding user:', error);
+    }
+  };
+
+  const updateUser = async (id: string, userData: Partial<AdminUser>) => {
+    try {
+      await adminService.updateUser(id, userData);
+      setUsers(prev => prev.map(user => 
+        user.id === id 
+          ? { ...user, ...userData, updatedAt: new Date().toISOString() }
+          : user
+      ));
+      
+      const user = users.find(u => u.id === id);
+      if (user) {
+        await addLog({
+          userId: currentUser.id,
+          userName: currentUser.email,
+          action: 'update',
+          target: 'user',
+          targetId: id,
+          description: `Atualizou usuário "${user.name}"`
+        });
       }
-    ]);
-  }, []);
-
-  const addUser = (userData: Omit<AdminUser, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newUser: AdminUser = {
-      ...userData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    setUsers(prev => [...prev, newUser]);
-    
-    addLog({
-      action: 'create',
-      target: 'user',
-      targetId: newUser.id,
-      description: `Criou usuário "${newUser.name}"`
-    });
-  };
-
-  const updateUser = (id: string, userData: Partial<AdminUser>) => {
-    setUsers(prev => prev.map(user => 
-      user.id === id 
-        ? { ...user, ...userData, updatedAt: new Date().toISOString() }
-        : user
-    ));
-    
-    const user = users.find(u => u.id === id);
-    if (user) {
-      addLog({
-        action: 'update',
-        target: 'user',
-        targetId: id,
-        description: `Atualizou usuário "${user.name}"`
-      });
+    } catch (error) {
+      console.error('Error updating user:', error);
     }
   };
 
-  const deleteUser = (id: string) => {
-    const user = users.find(u => u.id === id);
-    setUsers(prev => prev.filter(user => user.id !== id));
-    
-    if (user) {
-      addLog({
-        action: 'delete',
-        target: 'user',
-        targetId: id,
-        description: `Removeu usuário "${user.name}"`
-      });
+  const deleteUser = async (id: string) => {
+    try {
+      const user = users.find(u => u.id === id);
+      await adminService.deleteUser(id);
+      setUsers(prev => prev.filter(user => user.id !== id));
+      
+      if (user) {
+        await addLog({
+          userId: currentUser.id,
+          userName: currentUser.email,
+          action: 'delete',
+          target: 'user',
+          targetId: id,
+          description: `Removeu usuário "${user.name}"`
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
     }
   };
 
-  const addCategory = (categoryData: Omit<CategoryConfig, 'isActive'>) => {
-    const newCategory: CategoryConfig = {
-      ...categoryData,
-      isActive: true
-    };
-    setCategories(prev => [...prev, newCategory]);
-    
-    addLog({
-      action: 'category_add',
-      target: 'category',
-      targetId: newCategory.value,
-      description: `Adicionou categoria "${newCategory.label}"`
-    });
-  };
-
-  const updateCategory = (value: string, categoryData: Partial<CategoryConfig>) => {
-    setCategories(prev => prev.map(cat => 
-      cat.value === value ? { ...cat, ...categoryData } : cat
-    ));
-    
-    const category = categories.find(c => c.value === value);
-    if (category) {
-      addLog({
-        action: 'category_update',
+  const addCategory = async (categoryData: Omit<CategoryConfig, 'isActive'>) => {
+    try {
+      await adminService.addCategory(categoryData);
+      const newCategory: CategoryConfig = {
+        ...categoryData,
+        isActive: true
+      };
+      setCategories(prev => [...prev, newCategory]);
+      
+      await addLog({
+        userId: currentUser.id,
+        userName: currentUser.email,
+        action: 'category_add',
         target: 'category',
-        targetId: value,
-        description: `Atualizou categoria "${category.label}"`
+        targetId: newCategory.value,
+        description: `Adicionou categoria "${newCategory.label}"`
       });
+    } catch (error) {
+      console.error('Error adding category:', error);
     }
   };
 
-  const deleteCategory = (value: string) => {
-    const category = categories.find(c => c.value === value);
-    setCategories(prev => prev.filter(cat => cat.value !== value));
-    
-    if (category) {
-      addLog({
-        action: 'category_remove',
-        target: 'category',
-        targetId: value,
-        description: `Removeu categoria "${category.label}"`
-      });
+  const updateCategory = async (value: string, categoryData: Partial<CategoryConfig>) => {
+    try {
+      await adminService.updateCategory(value, categoryData);
+      setCategories(prev => prev.map(cat => 
+        cat.value === value ? { ...cat, ...categoryData } : cat
+      ));
+      
+      const category = categories.find(c => c.value === value);
+      if (category) {
+        await addLog({
+          userId: currentUser.id,
+          userName: currentUser.email,
+          action: 'category_update',
+          target: 'category',
+          targetId: value,
+          description: `Atualizou categoria "${category.label}"`
+        });
+      }
+    } catch (error) {
+      console.error('Error updating category:', error);
     }
   };
 
-  const addLog = (logData: Omit<ActivityLog, 'id' | 'userId' | 'userName' | 'timestamp'>) => {
-    const newLog: ActivityLog = {
-      ...logData,
-      id: Date.now().toString(),
-      userId: currentUser.id,
-      userName: authUser?.email || 'Administrador',
-      timestamp: new Date().toISOString()
-    };
-    setActivityLogs(prev => [newLog, ...prev]);
+  const deleteCategory = async (value: string) => {
+    try {
+      const category = categories.find(c => c.value === value);
+      await adminService.deleteCategory(value);
+      setCategories(prev => prev.filter(cat => cat.value !== value));
+      
+      if (category) {
+        await addLog({
+          userId: currentUser.id,
+          userName: currentUser.email,
+          action: 'category_remove',
+          target: 'category',
+          targetId: value,
+          description: `Removeu categoria "${category.label}"`
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting category:', error);
+    }
+  };
+
+  const addLog = async (logData: Omit<ActivityLog, 'id' | 'timestamp'>) => {
+    try {
+      await adminService.addLog(logData);
+      const newLog: ActivityLog = {
+        ...logData,
+        id: Date.now().toString(),
+        timestamp: new Date().toISOString()
+      };
+      setActivityLogs(prev => [newLog, ...prev]);
+    } catch (error) {
+      console.error('Error adding log:', error);
+    }
   };
 
   const isAdmin = authUser?.isAdmin || false;
-  const canEdit = authUser?.isAdmin || false;
+  const canEdit = authUser?.isAdmin || (authUser as any)?.role === 'editor' || false;
 
   return {
     users,
@@ -190,12 +201,14 @@ export const useAdmin = () => {
     currentUser,
     isAdmin,
     canEdit,
+    isLoading,
     addUser,
     updateUser,
     deleteUser,
     addCategory,
     updateCategory,
     deleteCategory,
-    addLog
+    addLog,
+    loadAdminData
   };
 };
