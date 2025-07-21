@@ -16,7 +16,7 @@ import { CalendarEvent, EventCategory, EventFormData, eventCategories } from '@/
 import { useToast } from '@/hooks/use-toast';
 import { CalendarSkeleton } from '@/components/Calendar/CalendarSkeleton';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -163,7 +163,7 @@ const Index = () => {
       const eventEndDate = event.endDate ? event.endDate.split('T')[0] : eventStartDate;
       return dateStr >= eventStartDate && dateStr <= eventEndDate;
     });
-    setDaySheetEvents(eventsForDay);
+    setDaySheetEvents(eventsForDay.sort((a, b) => a.title.localeCompare(b.title)));
     setDaySheetDate(date);
     setIsDaySheetOpen(true);
   };
@@ -238,6 +238,31 @@ const Index = () => {
     return eventCategories.find(cat => cat.value === category);
   };
 
+  const getEventTypeStyles = (event: CalendarEvent) => {
+    switch (event.eventType) {
+      case 'feriado':
+        return 'bg-red-100 text-red-800 border-red-200 font-semibold';
+      case 'recesso':
+        return 'bg-orange-100 text-orange-800 border-orange-200 font-semibold';
+      case 'evento':
+        return 'bg-blue-100 text-blue-800 border-blue-200 font-semibold';
+      default: // normal
+        const categoryStyles = {
+          geral: 'bg-blue-100 text-blue-800 border-blue-200',
+          infantil: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+          fundamental1: 'bg-green-100 text-green-800 border-green-200',
+          fundamental2: 'bg-cyan-100 text-cyan-800 border-cyan-200',
+          medio: 'bg-purple-100 text-purple-800 border-purple-200',
+          pastoral: 'bg-pink-100 text-pink-800 border-pink-200',
+          esportes: 'bg-orange-100 text-orange-800 border-orange-200',
+          robotica: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+          biblioteca: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+          nap: 'bg-rose-100 text-rose-800 border-rose-200'
+        };
+        return categoryStyles[event.category] || categoryStyles.geral;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <CalendarHeader
@@ -272,24 +297,72 @@ const Index = () => {
             <SheetTitle>
               {daySheetDate && format(daySheetDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
             </SheetTitle>
+            <SheetDescription>
+              {daySheetEvents.length} evento(s) encontrado(s).
+            </SheetDescription>
           </SheetHeader>
           <div className="py-4 space-y-3">
             {daySheetEvents.length > 0 ? daySheetEvents.map(event => {
-                 const categoryData = getCategoryData(event.category);
-                 return (
-                    <div key={event.id} onClick={() => { handleEventClick(event); setIsDaySheetOpen(false); }}
-                        className={cn("p-4 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-medium bg-card")}
+                const categoryData = getCategoryData(event.category);
+                return (
+                    <div
+                        key={event.id}
+                        onClick={() => { handleEventClick(event); setIsDaySheetOpen(false); }}
+                        className={cn(
+                            "p-4 rounded-lg border cursor-pointer transition-all duration-200",
+                            "hover:scale-[1.02] hover:shadow-medium",
+                            getEventTypeStyles(event)
+                        )}
                     >
-                        <h4 className="font-medium text-foreground mb-1">{event.title}</h4>
-                        <p className="text-sm text-muted-foreground mb-2">{event.description}</p>
-                        <div className="flex items-center gap-2">
-                           <span className={cn("inline-flex items-center px-2 py-1 rounded-md text-xs font-medium", categoryData?.color)}>
-                             {categoryData?.label}
-                           </span>
+                        <div className="flex items-start gap-3">
+                            <div className="flex-1 min-w-0">
+                                <h4 className="font-medium text-foreground mb-1 break-words whitespace-normal leading-tight">
+                                    {event.title}
+                                </h4>
+                                {event.description && (
+                                <p className="text-sm text-muted-foreground break-words whitespace-normal leading-tight mb-2">
+                                    {event.description}
+                                </p>
+                                )}
+                                <div className="flex items-center gap-2">
+                                <span className={cn(
+                                    "inline-flex items-center px-2 py-1 rounded-md text-xs font-medium",
+                                    {
+                                    'bg-blue-200 text-blue-800': event.category === 'geral',
+                                    'bg-yellow-200 text-yellow-800': event.category === 'infantil', 
+                                    'bg-green-200 text-green-800': event.category === 'fundamental1',
+                                    'bg-cyan-200 text-cyan-800': event.category === 'fundamental2',
+                                    'bg-purple-200 text-purple-800': event.category === 'medio',
+                                    'bg-pink-200 text-pink-800': event.category === 'pastoral',
+                                    'bg-orange-200 text-orange-800': event.category === 'esportes',
+                                    'bg-indigo-200 text-indigo-800': event.category === 'robotica',
+                                    'bg-emerald-200 text-emerald-800': event.category === 'biblioteca',
+                                    'bg-rose-200 text-rose-800': event.category === 'nap'
+                                    }
+                                )}>
+                                    <div className={cn(
+                                    "w-2 h-2 rounded-full mr-2",
+                                    {
+                                        'bg-blue-500': event.category === 'geral',
+                                        'bg-yellow-500': event.category === 'infantil', 
+                                        'bg-green-500': event.category === 'fundamental1',
+                                        'bg-cyan-500': event.category === 'fundamental2',
+                                        'bg-purple-500': event.category === 'medio',
+                                        'bg-pink-500': event.category === 'pastoral',
+                                        'bg-orange-500': event.category === 'esportes',
+                                        'bg-indigo-500': event.category === 'robotica',
+                                        'bg-emerald-500': event.category === 'biblioteca',
+                                        'bg-rose-500': event.category === 'nap'
+                                    }
+                                    )} />
+                                    {categoryData?.label}
+                                </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )
-            }) : <p className="text-muted-foreground">Nenhum evento para este dia.</p>}
+            }) : <p className="text-muted-foreground text-center py-8">Nenhum evento para este dia.</p>}
           </div>
           {canEdit && daySheetDate &&
             <Button onClick={() => { handleNewEvent(daySheetDate); setIsDaySheetOpen(false); }} className="w-full">
