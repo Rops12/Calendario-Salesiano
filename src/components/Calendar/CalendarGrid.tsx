@@ -24,14 +24,20 @@ export function CalendarGrid({
   
   const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
   const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-  const startDate = new Date(startOfMonth);
-  startDate.setDate(startDate.getDate() - startDate.getDay());
-  
+
+  // Calcula o primeiro dia a ser exibido na grade (o domingo da primeira semana)
+  const gridStartDate = new Date(startOfMonth);
+  gridStartDate.setDate(gridStartDate.getDate() - startOfMonth.getDay());
+
+  // Calcula o último dia a ser exibido na grade (o sábado da última semana)
+  const gridEndDate = new Date(endOfMonth);
+  gridEndDate.setDate(gridEndDate.getDate() + (6 - endOfMonth.getDay()));
+
   const days = [];
-  const current = new Date(startDate);
-  
-  // Generate 42 days (6 weeks)
-  for (let i = 0; i < 42; i++) {
+  let current = new Date(gridStartDate);
+
+  // Gera os dias dinamicamente desde o início até o fim da grade calculada
+  while (current <= gridEndDate) {
     days.push(new Date(current));
     current.setDate(current.getDate() + 1);
   }
