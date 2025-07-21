@@ -1,9 +1,10 @@
-import jsPDF from 'jspdf'; // ESTA LINHA FOI CORRIGIDA
+import * as jsPDF from 'jspdf'; // ESTA É A IMPORTAÇÃO CORRIGIDA
 import 'jspdf-autotable';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, getYear, getMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CalendarEvent, EventCategory, eventCategories } from '@/types/calendar';
 
+// O restante do arquivo permanece exatamente o mesmo
 declare module 'jspdf' {
   interface jsPDF {
     autoTable: (options: any) => jsPDF;
@@ -19,7 +20,8 @@ export const usePdfExport = (
   selectedCategories: EventCategory[]
 ) => {
   const exportFullYearToPdf = (year: number) => {
-    const doc = new jsPDF('p', 'pt', 'a4'); // Esta chamada agora funcionará
+    // Agora 'jsPDF.default' é usado para criar a nova instância
+    const doc = new jsPDF.default('p', 'pt', 'a4'); 
     const filteredEvents = allEvents.filter(event => selectedCategories.includes(event.category));
 
     doc.setFontSize(24);
@@ -35,7 +37,7 @@ export const usePdfExport = (
   };
   
   const exportMonthToPdf = (currentDate: Date) => {
-    const doc = new jsPDF('p', 'pt', 'a4'); // E esta também
+    const doc = new jsPDF.default('p', 'pt', 'a4'); // E aqui também
     const filteredEvents = allEvents.filter(event => selectedCategories.includes(event.category));
     
     generateMonthPage(doc, currentDate, filteredEvents);
@@ -45,7 +47,7 @@ export const usePdfExport = (
     doc.save(`calendario-${monthName}-${year}.pdf`);
   };
 
-  const generateMonthPage = (doc: jsPDF, currentDate: Date, events: CalendarEvent[]) => {
+  const generateMonthPage = (doc: jsPDF.default, currentDate: Date, events: CalendarEvent[]) => {
     const monthName = format(currentDate, 'MMMM yyyy', { locale: ptBR });
     const daysOfWeek = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
     
