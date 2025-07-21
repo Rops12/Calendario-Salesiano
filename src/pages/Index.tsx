@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { format, parse, isValid } from 'date-fns';
 import { CalendarHeader } from '@/components/Calendar/CalendarHeader';
 import { CategoryFilters } from '@/components/Calendar/CategoryFilters';
 import { CalendarGrid } from '@/components/Calendar/CalendarGrid';
@@ -6,16 +8,38 @@ import { WeekView } from '@/components/Calendar/WeekView';
 import { AgendaView } from '@/components/Calendar/AgendaView';
 import { EventModal } from '@/components/Calendar/EventModal';
 import { AdminPanel } from '@/components/Admin/AdminPanel';
-import { ViewSwitcher, CalendarView } from '@/components/Calendar/ViewSwitcher';
+import { CalendarView } from '@/components/Calendar/ViewSwitcher';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import { useAdmin } from '@/hooks/useAdmin';
 import { CalendarEvent, EventCategory, EventFormData } from '@/types/calendar';
 import { useToast } from '@/hooks/use-toast';
-import { CalendarSkeleton } from '@/components/Calendar/CalendarSkeleton'; // Importe o novo componente
+import { CalendarSkeleton } from '@/components/Calendar/CalendarSkeleton';
+import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 const Index = () => {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [currentView, setCurrentView] = useState<CalendarView>('month');
+  const navigate = useNavigate();
+  const params = useParams();
+
+  // Initialize state from URL params or use sensible defaults
+  const [currentDate, setCurrentDate] = useState(() => {
+    const dateParam = params.date;
+    if (dateParam) {
+      const parsedDate = parse(dateParam, 'yyyy-MM-dd', new Date());
+      if (isValid(parsedDate)) {
+        return parsedDate;
+      }
+    }
+    return new Date();
+  });
+
+  const [currentView, setCurrentView] = useState<CalendarView>(() => {
+    const viewParam = params.view;
+    if (viewParam === 'month' || viewParam === 'week' || viewParam === 'agenda') {
+      return viewParam;
+    }
+    return 'month';
+  });
+
   const [selectedCategories, setSelectedCategories] = useState<EventCategory[]>(() => {
     const saved = localStorage.getItem('selectedCategories');
     return saved ? JSON.parse(saved) : [
@@ -23,22 +47,41 @@ const Index = () => {
       'pastoral', 'esportes', 'robotica', 'biblioteca', 'nap'
     ];
   });
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [isCommandOpen, setIsCommandOpen] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState<'next' | 'prev' | null>(null);
 
-  const { events, createEvent, updateEvent, deleteEvent, isLoading } = useCalendarEvents(); // Adicione isLoading
+  const { events, createEvent, updateEvent, deleteEvent, isLoading } = useCalendarEvents();
   const { isAdmin, canEdit } = useAdmin();
   const { toast } = useToast();
 
+  // Effect to sync state changes back to the URL
+  useEffect(() => {
+    const formattedDate = format(currentDate, 'yyyy-MM-dd');
+    navigate(`/${currentView}/${formattedDate}`, { replace: true });
+  }, [currentDate, currentView, navigate]);
+
+  // Effect to handle Command Palette shortcut (Cmd+K)
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setIsCommandOpen((open) => !open);
+      }
+    };
+    document.addEventListener('keydown', down);
+    return () => document.removeEventListener('keydown', down);
+  }, []);
+  
   useEffect(() => {
     localStorage.setItem('selectedCategories', JSON.stringify(selectedCategories));
   }, [selectedCategories]);
-  
-  // Adiciona um pequeno timeout para a animação de transição
+
   useEffect(() => {
     if (transitionDirection) {
       const timer = setTimeout(() => setTransitionDirection(null), 300);
@@ -57,7 +100,6 @@ const Index = () => {
     }
 
     const newDate = new Date(currentDate);
-
     switch (currentView) {
       case 'month':
         newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1), 1);
@@ -69,8 +111,13 @@ const Index = () => {
         newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
         break;
     }
-    
     setCurrentDate(newDate);
+  };
+
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setCurrentDate(date);
+    }
   };
 
   const handleToggleCategory = (category: EventCategory) => {
@@ -139,7 +186,6 @@ const Index = () => {
     (event.description && event.description.toLowerCase().includes(searchQuery.toLowerCase()))
   ), [events, searchQuery]);
 
-  // Define a classe de animação com base na direção da transição
   const animationClass = 
     transitionDirection === 'next' ? 'animate-[slide-in-from-right_0.3s_ease-out]' :
     transitionDirection === 'prev' ? 'animate-[slide-in-from-left_0.3s_ease-out]' :
@@ -169,11 +215,17 @@ const Index = () => {
     }
   };
 
+  const runCommand = (command: () => void) => {
+    command();
+    setIsCommandOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <CalendarHeader
         currentDate={currentDate}
         onNavigate={handleNavigate}
+        onDateSelect={handleDateSelect}
         onNewEvent={canEdit ? handleNewEvent : undefined}
         onSearch={setSearchQuery}
         searchQuery={searchQuery}
@@ -195,6 +247,28 @@ const Index = () => {
           {renderView()}
         </div>
       </div>
+
+      <CommandDialog open={isCommandOpen} onOpenChange={setIsCommandOpen}>
+        <CommandInput placeholder="Digite um comando ou pesquise..." />
+        <CommandList>
+          <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
+          <CommandGroup heading="Navegação">
+            <CommandItem onSelect={() => runCommand(() => handleNavigate('today'))}>Ir para Hoje</CommandItem>
+            <CommandItem onSelect={() => runCommand(() => handleNavigate('next'))}>Próximo Período</CommandItem>
+            <CommandItem onSelect={() => runCommand(() => handleNavigate('prev'))}>Período Anterior</CommandItem>
+          </CommandGroup>
+          <CommandGroup heading="Visualização">
+            <CommandItem onSelect={() => runCommand(() => setCurrentView('month'))}>Mudar para Mês</CommandItem>
+            <CommandItem onSelect={() => runCommand(() => setCurrentView('week'))}>Mudar para Semana</CommandItem>
+            <CommandItem onSelect={() => runCommand(() => setCurrentView('agenda'))}>Mudar para Agenda</CommandItem>
+          </CommandGroup>
+          {canEdit && (
+            <CommandGroup heading="Ações">
+              <CommandItem onSelect={() => runCommand(() => handleNewEvent())}>Novo Evento</CommandItem>
+            </CommandGroup>
+          )}
+        </CommandList>
+      </CommandDialog>
 
       <EventModal
         isOpen={isModalOpen}
