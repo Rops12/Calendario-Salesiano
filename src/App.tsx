@@ -18,21 +18,17 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />
+
+          {/* Rota ÚNICA e unificada para o calendário.
+            Os '?' tornam os parâmetros 'view' e 'date' opcionais.
+            Isso cobre os casos: /, /:view, e /:view/:date
+          */}
+          <Route path="/:view?/:date?" element={
+            <ProtectedRoute>
+              <Index />
+            </ProtectedRoute>
+          } />
           
-          {/* Rota para a página inicial (sem parâmetros) */}
-          <Route path="/" element={
-            <ProtectedRoute>
-              <Index />
-            </ProtectedRoute>
-          } />
-
-          {/* Rota ADICIONADA para lidar com a visualização e data na URL */}
-          <Route path="/:view/:date" element={
-            <ProtectedRoute>
-              <Index />
-            </ProtectedRoute>
-          } />
-
           {/* Rota para páginas não encontradas */}
           <Route path="*" element={<NotFound />} />
         </Routes>
