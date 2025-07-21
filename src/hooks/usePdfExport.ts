@@ -1,9 +1,8 @@
-// NENHUMA importação de jsPDF aqui no topo.
-import 'jspdf-autotable';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable'; // MUDANÇA 1: Importação explícita do plugin
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, getYear, getMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CalendarEvent, EventCategory, eventCategories } from '@/types/calendar';
-import { jsPDF } from 'jspdf'; // A importação aqui é apenas para a TIPAGEM.
 
 const getCategoryData = (category: EventCategory) => {
   return eventCategories.find(cat => cat.value === category);
@@ -13,10 +12,7 @@ export const usePdfExport = (
   allEvents: CalendarEvent[],
   selectedCategories: EventCategory[]
 ) => {
-  const exportFullYearToPdf = async (year: number) => {
-    // Importação dinâmica e robusta
-    const { default: jsPDF } = await import('jspdf');
-    
+  const exportFullYearToPdf = (year: number) => {
     const doc = new jsPDF('p', 'pt', 'a4');
     const filteredEvents = allEvents.filter(event => selectedCategories.includes(event.category));
 
@@ -31,10 +27,7 @@ export const usePdfExport = (
     doc.save(`calendario-completo-${year}.pdf`);
   };
   
-  const exportMonthToPdf = async (currentDate: Date) => {
-    // Importação dinâmica e robusta
-    const { default: jsPDF } = await import('jspdf');
-
+  const exportMonthToPdf = (currentDate: Date) => {
     const doc = new jsPDF('p', 'pt', 'a4');
     const filteredEvents = allEvents.filter(event => selectedCategories.includes(event.category));
     
@@ -46,7 +39,6 @@ export const usePdfExport = (
   };
 
   const generateMonthPage = (doc: jsPDF, currentDate: Date, events: CalendarEvent[]) => {
-    // O restante desta função permanece o mesmo da versão anterior...
     const monthName = format(currentDate, 'MMMM yyyy', { locale: ptBR });
     const daysOfWeek = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
     
@@ -84,7 +76,8 @@ export const usePdfExport = (
     doc.setFontSize(18);
     doc.text(monthName.charAt(0).toUpperCase() + monthName.slice(1), doc.internal.pageSize.getWidth() / 2, 80, { align: 'center' });
 
-    doc.autoTable({
+    // MUDANÇA 2: Chamar a função autoTable explicitamente
+    autoTable(doc, {
       startY: 100,
       head: [daysOfWeek],
       body: body,
