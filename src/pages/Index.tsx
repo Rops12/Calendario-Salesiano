@@ -12,7 +12,7 @@ import { AdminPanel } from '@/components/Admin/AdminPanel';
 import { CalendarView } from '@/components/Calendar/ViewSwitcher';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import { useAdmin } from '@/hooks/useAdmin';
-import { CalendarEvent, EventCategory, EventFormData, eventCategories } from '@/types/calendar';
+import { CalendarEvent, EventCategory, EventFormData, eventCategories, EventType } from '@/types/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarSkeleton } from '@/components/Calendar/CalendarSkeleton';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -244,22 +244,8 @@ const Index = () => {
         return 'bg-red-100 text-red-800 border-red-200 font-semibold';
       case 'recesso':
         return 'bg-orange-100 text-orange-800 border-orange-200 font-semibold';
-      case 'evento':
-        return 'bg-blue-100 text-blue-800 border-blue-200 font-semibold';
-      default: // normal
-        const categoryStyles = {
-          geral: 'bg-blue-100 text-blue-800 border-blue-200',
-          infantil: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-          fundamental1: 'bg-green-100 text-green-800 border-green-200',
-          fundamental2: 'bg-cyan-100 text-cyan-800 border-cyan-200',
-          medio: 'bg-purple-100 text-purple-800 border-purple-200',
-          pastoral: 'bg-pink-100 text-pink-800 border-pink-200',
-          esportes: 'bg-orange-100 text-orange-800 border-orange-200',
-          robotica: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-          biblioteca: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-          nap: 'bg-rose-100 text-rose-800 border-rose-200'
-        };
-        return categoryStyles[event.category] || categoryStyles.geral;
+      default: // normal e evento
+        return 'bg-card hover:bg-muted/50 text-card-foreground border';
     }
   };
 
@@ -327,32 +313,21 @@ const Index = () => {
                                 <div className="flex items-center gap-2">
                                 <span className={cn(
                                     "inline-flex items-center px-2 py-1 rounded-md text-xs font-medium",
-                                    {
-                                    'bg-blue-200 text-blue-800': event.category === 'geral',
-                                    'bg-yellow-200 text-yellow-800': event.category === 'infantil', 
-                                    'bg-green-200 text-green-800': event.category === 'fundamental1',
-                                    'bg-cyan-200 text-cyan-800': event.category === 'fundamental2',
-                                    'bg-purple-200 text-purple-800': event.category === 'medio',
-                                    'bg-pink-200 text-pink-800': event.category === 'pastoral',
-                                    'bg-orange-200 text-orange-800': event.category === 'esportes',
-                                    'bg-indigo-200 text-indigo-800': event.category === 'robotica',
-                                    'bg-emerald-200 text-emerald-800': event.category === 'biblioteca',
-                                    'bg-rose-200 text-rose-800': event.category === 'nap'
-                                    }
+                                    'bg-muted text-muted-foreground'
                                 )}>
                                     <div className={cn(
                                     "w-2 h-2 rounded-full mr-2",
                                     {
-                                        'bg-blue-500': event.category === 'geral',
-                                        'bg-yellow-500': event.category === 'infantil', 
-                                        'bg-green-500': event.category === 'fundamental1',
-                                        'bg-cyan-500': event.category === 'fundamental2',
-                                        'bg-purple-500': event.category === 'medio',
-                                        'bg-pink-500': event.category === 'pastoral',
-                                        'bg-orange-500': event.category === 'esportes',
-                                        'bg-indigo-500': event.category === 'robotica',
-                                        'bg-emerald-500': event.category === 'biblioteca',
-                                        'bg-rose-500': event.category === 'nap'
+                                        'bg-category-geral': event.category === 'geral',
+                                        'bg-category-infantil': event.category === 'infantil', 
+                                        'bg-category-fundamental1': event.category === 'fundamental1',
+                                        'bg-category-fundamental2': event.category === 'fundamental2',
+                                        'bg-category-medio': event.category === 'medio',
+                                        'bg-category-pastoral': event.category === 'pastoral',
+                                        'bg-category-esportes': event.category === 'esportes',
+                                        'bg-category-robotica': event.category === 'robotica',
+                                        'bg-category-biblioteca': event.category === 'biblioteca',
+                                        'bg-category-nap': event.category === 'nap'
                                     }
                                     )} />
                                     {categoryData?.label}
