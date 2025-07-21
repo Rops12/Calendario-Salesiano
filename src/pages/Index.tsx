@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { format, parse, isValid } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { CalendarHeader } from '@/components/Calendar/CalendarHeader';
 import { CategoryFilters } from '@/components/Calendar/CategoryFilters';
 import { CalendarGrid } from '@/components/Calendar/CalendarGrid';
@@ -11,10 +12,15 @@ import { AdminPanel } from '@/components/Admin/AdminPanel';
 import { CalendarView } from '@/components/Calendar/ViewSwitcher';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import { useAdmin } from '@/hooks/useAdmin';
-import { CalendarEvent, EventCategory, EventFormData } from '@/types/calendar';
+import { CalendarEvent, EventCategory, EventFormData, eventCategories } from '@/types/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarSkeleton } from '@/components/Calendar/CalendarSkeleton';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+
 
 const Index = () => {
   const navigate = useNavigate();
@@ -38,6 +44,10 @@ const Index = () => {
     }
     return 'month';
   });
+  
+  const [isDaySheetOpen, setIsDaySheetOpen] = useState(false);
+  const [daySheetEvents, setDaySheetEvents] = useState<CalendarEvent[]>([]);
+  const [daySheetDate, setDaySheetDate] = useState<Date | null>(null);
 
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [selectedCategories, setSelectedCategories] = useState<EventCategory[]>(() => {
@@ -146,10 +156,16 @@ const Index = () => {
     setIsModalOpen(true);
   };
 
-  const handleDateClick = (date: Date) => {
-    setSelectedEvent(null);
-    setSelectedDate(date);
-    setIsModalOpen(true);
+  const handleDateClickForSheet = (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const eventsForDay = filteredEvents.filter(event => {
+      const eventStartDate = event.startDate.split('T')[0];
+      const eventEndDate = event.endDate ? event.endDate.split('T')[0] : eventStartDate;
+      return dateStr >= eventStartDate && dateStr <= eventEndDate;
+    });
+    setDaySheetEvents(eventsForDay);
+    setDaySheetDate(date);
+    setIsDaySheetOpen(true);
   };
 
   const handleSaveEvent = (data: EventFormData) => {
@@ -179,9 +195,10 @@ const Index = () => {
   };
 
   const filteredEvents = useMemo(() => events.filter(event =>
-    event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (event.description && event.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  ), [events, searchQuery]);
+    (event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (event.description && event.description.toLowerCase().includes(searchQuery.toLowerCase()))) &&
+    selectedCategories.includes(event.category)
+  ), [events, searchQuery, selectedCategories]);
 
   const animationClass = 
     transitionDirection === 'next' ? 'animate-[slide-in-from-right_0.3s_ease-out]' :
@@ -202,9 +219,9 @@ const Index = () => {
 
     switch (currentView) {
       case 'month':
-        return <CalendarGrid {...viewProps} onDateClick={handleDateClick} onEventDrop={canEdit ? handleEventDrop : undefined} />;
+        return <CalendarGrid {...viewProps} onDateClick={handleDateClickForSheet} onAddNewEvent={handleNewEvent} onEventDrop={canEdit ? handleEventDrop : undefined} />;
       case 'week':
-        return <WeekView {...viewProps} onDateClick={canEdit ? handleDateClick : undefined} onNewEventClick={canEdit ? handleNewEvent : undefined} />;
+        return <WeekView {...viewProps} onDateClick={canEdit ? handleDateClickForSheet : undefined} />;
       case 'agenda':
         return <AgendaView {...viewProps} onNewEventClick={canEdit ? handleNewEvent : undefined} />;
       default:
@@ -215,6 +232,10 @@ const Index = () => {
   const runCommand = (command: () => void) => {
     command();
     setIsCommandOpen(false);
+  };
+  
+  const getCategoryData = (category: EventCategory) => {
+    return eventCategories.find(cat => cat.value === category);
   };
 
   return (
@@ -244,6 +265,39 @@ const Index = () => {
           {renderView()}
         </div>
       </div>
+
+      <Sheet open={isDaySheetOpen} onOpenChange={setIsDaySheetOpen}>
+        <SheetContent className="w-full sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>
+              {daySheetDate && format(daySheetDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="py-4 space-y-3">
+            {daySheetEvents.length > 0 ? daySheetEvents.map(event => {
+                 const categoryData = getCategoryData(event.category);
+                 return (
+                    <div key={event.id} onClick={() => { handleEventClick(event); setIsDaySheetOpen(false); }}
+                        className={cn("p-4 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-medium bg-card")}
+                    >
+                        <h4 className="font-medium text-foreground mb-1">{event.title}</h4>
+                        <p className="text-sm text-muted-foreground mb-2">{event.description}</p>
+                        <div className="flex items-center gap-2">
+                           <span className={cn("inline-flex items-center px-2 py-1 rounded-md text-xs font-medium", categoryData?.color)}>
+                             {categoryData?.label}
+                           </span>
+                        </div>
+                    </div>
+                )
+            }) : <p className="text-muted-foreground">Nenhum evento para este dia.</p>}
+          </div>
+          {canEdit && daySheetDate &&
+            <Button onClick={() => { handleNewEvent(daySheetDate); setIsDaySheetOpen(false); }} className="w-full">
+              <Plus className="h-4 w-4 mr-2" /> Adicionar Evento
+            </Button>
+          }
+        </SheetContent>
+      </Sheet>
 
       <CommandDialog open={isCommandOpen} onOpenChange={setIsCommandOpen}>
         <CommandInput placeholder="Digite um comando ou pesquise..." />
