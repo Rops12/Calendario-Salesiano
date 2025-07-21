@@ -10,16 +10,4 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  build: {
-    rollupOptions: {
-      // MUDANÇA: Mapeando os pacotes externos para as variáveis globais que a CDN cria
-      external: ['jspdf', 'jspdf-autotable'],
-      output: {
-        globals: {
-          jspdf: 'jspdf',
-          'jspdf-autotable': 'jspdf.plugin.autotable'
-        }
-      }
-    }
-  }
 })
