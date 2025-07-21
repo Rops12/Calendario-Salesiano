@@ -1,5 +1,5 @@
 import { Draggable } from '@hello-pangea/dnd';
-import { CalendarEvent, EventCategory, eventCategories, EventType } from '@/types/calendar';
+import { CalendarEvent, EventCategory, EventType } from '@/types/calendar';
 import { cn } from '@/lib/utils';
 
 interface DraggableEventProps {
@@ -10,36 +10,18 @@ interface DraggableEventProps {
 }
 
 export function DraggableEvent({ event, index, onClick, isDraggable = true }: DraggableEventProps) {
-  const getCategoryColor = (category: EventCategory) => {
-    const categoryData = eventCategories.find(cat => cat.value === category);
-    return categoryData?.color || 'category-geral';
-  };
-
-
-  const getEventTypeStyles = (eventType: EventType, category: EventCategory) => {
+  const getEventTypeStyles = (eventType: EventType) => {
+    // Mantém fundos especiais para feriados e recessos, mas usa um fundo neutro para os demais
     switch (eventType) {
       case 'feriado':
         return 'bg-red-100 text-red-800 border-red-200 font-semibold';
       case 'recesso':
         return 'bg-orange-100 text-orange-800 border-orange-200 font-semibold';
       default:
-        const categoryStyles = {
-          geral: 'bg-blue-100 text-blue-800 border-blue-200',
-          infantil: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-          fundamental1: 'bg-green-100 text-green-800 border-green-200',
-          fundamental2: 'bg-cyan-100 text-cyan-800 border-cyan-200',
-          medio: 'bg-purple-100 text-purple-800 border-purple-200',
-          pastoral: 'bg-pink-100 text-pink-800 border-pink-200',
-          esportes: 'bg-orange-100 text-orange-800 border-orange-200',
-          robotica: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-          biblioteca: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-          nap: 'bg-rose-100 text-rose-800 border-rose-200'
-        };
-        return categoryStyles[category] || categoryStyles.geral;
+        // Estilo neutro para eventos normais e de evento, focando a cor no círculo
+        return 'bg-card hover:bg-muted/50 text-card-foreground border';
     }
   };
-
-  
 
   return (
     <Draggable draggableId={event.id} index={index} isDragDisabled={!isDraggable}>
@@ -49,10 +31,10 @@ export function DraggableEvent({ event, index, onClick, isDraggable = true }: Dr
           {...provided.draggableProps}
           {...(isDraggable ? provided.dragHandleProps : {})}
           className={cn(
-            "px-2 py-1 rounded text-xs font-medium border",
+            "px-2 py-1 rounded text-xs font-medium",
             "transition-all duration-200 break-words whitespace-normal leading-tight min-h-[1.5rem]",
             isDraggable ? "cursor-pointer hover:scale-105 hover:shadow-medium" : "cursor-default",
-            getEventTypeStyles(event.eventType, event.category),
+            getEventTypeStyles(event.eventType), // A função agora só precisa do tipo de evento
             snapshot.isDragging && "shadow-strong scale-105 rotate-2 z-50"
           )}
           onClick={(e) => {
@@ -62,20 +44,20 @@ export function DraggableEvent({ event, index, onClick, isDraggable = true }: Dr
             }
           }}
         >
-          <div className="flex items-start gap-1">
+          <div className="flex items-start gap-1.5">
             <div className={cn(
               "w-2 h-2 rounded-full flex-shrink-0 mt-0.5",
               {
-                'bg-blue-500': event.category === 'geral',
-                'bg-yellow-500': event.category === 'infantil', 
-                'bg-green-500': event.category === 'fundamental1',
-                'bg-cyan-500': event.category === 'fundamental2',
-                'bg-purple-500': event.category === 'medio',
-                'bg-pink-500': event.category === 'pastoral',
-                'bg-orange-500': event.category === 'esportes',
-                'bg-indigo-500': event.category === 'robotica',
-                'bg-emerald-500': event.category === 'biblioteca',
-                'bg-rose-500': event.category === 'nap'
+                'bg-category-geral': event.category === 'geral',
+                'bg-category-infantil': event.category === 'infantil', 
+                'bg-category-fundamental1': event.category === 'fundamental1',
+                'bg-category-fundamental2': event.category === 'fundamental2',
+                'bg-category-medio': event.category === 'medio',
+                'bg-category-pastoral': event.category === 'pastoral',
+                'bg-category-esportes': event.category === 'esportes',
+                'bg-category-robotica': event.category === 'robotica',
+                'bg-category-biblioteca': event.category === 'biblioteca',
+                'bg-category-nap': event.category === 'nap'
               }
             )} />
             <span className="flex-1 text-xs leading-tight">
