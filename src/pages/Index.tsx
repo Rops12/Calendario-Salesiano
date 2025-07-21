@@ -20,7 +20,6 @@ const Index = () => {
   const navigate = useNavigate();
   const params = useParams();
 
-  // Initialize state from URL params or use sensible defaults
   const [currentDate, setCurrentDate] = useState(() => {
     const dateParam = params.date;
     if (dateParam) {
@@ -33,13 +32,14 @@ const Index = () => {
   });
 
   const [currentView, setCurrentView] = useState<CalendarView>(() => {
-    const viewParam = params.view;
-    if (viewParam === 'month' || viewParam === 'week' || viewParam === 'agenda') {
+    const viewParam = params.view as CalendarView;
+    if (['month', 'week', 'agenda'].includes(viewParam)) {
       return viewParam;
     }
     return 'month';
   });
 
+  const [isInitialLoad, setIsInitialLoad] = useState(true); // Novo estado para o carregamento inicial
   const [selectedCategories, setSelectedCategories] = useState<EventCategory[]>(() => {
     const saved = localStorage.getItem('selectedCategories');
     return saved ? JSON.parse(saved) : [
@@ -56,17 +56,24 @@ const Index = () => {
   const [isCommandOpen, setIsCommandOpen] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState<'next' | 'prev' | null>(null);
 
-  const { events, createEvent, updateEvent, deleteEvent, isLoading } = useCalendarEvents();
+  const { events, isLoading } = useCalendarEvents();
   const { isAdmin, canEdit } = useAdmin();
   const { toast } = useToast();
 
-  // Effect to sync state changes back to the URL
+  // Efeito para controlar APENAS o carregamento inicial
+  useEffect(() => {
+    if (!isLoading && isInitialLoad) {
+      setIsInitialLoad(false);
+    }
+  }, [isLoading, isInitialLoad]);
+
   useEffect(() => {
     const formattedDate = format(currentDate, 'yyyy-MM-dd');
-    navigate(`/${currentView}/${formattedDate}`, { replace: true });
-  }, [currentDate, currentView, navigate]);
+    if (params.view !== currentView || params.date !== formattedDate) {
+      navigate(`/${currentView}/${formattedDate}`, { replace: true });
+    }
+  }, [currentDate, currentView, navigate, params.view, params.date]);
 
-  // Effect to handle Command Palette shortcut (Cmd+K)
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
@@ -192,7 +199,8 @@ const Index = () => {
     'animate-fade-in';
     
   const renderView = () => {
-    if (isLoading) {
+    // AQUI ESTÁ A MUDANÇA: Usar o novo estado `isInitialLoad`
+    if (isInitialLoad) {
       return <CalendarSkeleton />;
     }
     
@@ -288,3 +296,4 @@ const Index = () => {
 };
 
 export default Index;
+
