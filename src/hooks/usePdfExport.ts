@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable'; // MUDANÇA 1: Importação explícita do plugin
+import autoTable from 'jspdf-autotable';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, getYear, getMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CalendarEvent, EventCategory, eventCategories } from '@/types/calendar';
@@ -15,10 +15,8 @@ export const usePdfExport = (
   const exportFullYearToPdf = (year: number) => {
     const doc = new jsPDF('p', 'pt', 'a4');
     const filteredEvents = allEvents.filter(event => selectedCategories.includes(event.category));
-
     doc.setFontSize(24);
     doc.text(`Calendário Salesiano - ${year}`, doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
-
     for (let i = 0; i < 12; i++) {
       const currentDate = new Date(year, i, 1);
       if (i > 0) doc.addPage();
@@ -30,9 +28,7 @@ export const usePdfExport = (
   const exportMonthToPdf = (currentDate: Date) => {
     const doc = new jsPDF('p', 'pt', 'a4');
     const filteredEvents = allEvents.filter(event => selectedCategories.includes(event.category));
-    
     generateMonthPage(doc, currentDate, filteredEvents);
-    
     const monthName = format(currentDate, 'MMMM', { locale: ptBR });
     const year = getYear(currentDate);
     doc.save(`calendario-${monthName}-${year}.pdf`);
@@ -61,22 +57,14 @@ export const usePdfExport = (
     const body = [];
     let week: any[] = [];
     daysInGrid.forEach((day, index) => {
-      const dayData = {
-        date: day,
-        events: getEventsForDate(day),
-        isCurrentMonth: getMonth(day) === getMonth(currentDate),
-      };
+      const dayData = { date: day, events: getEventsForDate(day), isCurrentMonth: getMonth(day) === getMonth(currentDate) };
       week.push(dayData);
-      if ((index + 1) % 7 === 0) {
-        body.push(week);
-        week = [];
-      }
+      if ((index + 1) % 7 === 0) { body.push(week); week = []; }
     });
 
     doc.setFontSize(18);
     doc.text(monthName.charAt(0).toUpperCase() + monthName.slice(1), doc.internal.pageSize.getWidth() / 2, 80, { align: 'center' });
 
-    // MUDANÇA 2: Chamar a função autoTable explicitamente
     autoTable(doc, {
       startY: 100,
       head: [daysOfWeek],
