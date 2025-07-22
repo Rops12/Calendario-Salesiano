@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CalendarEvent, EventFormData, eventCategories, EventType, EventCategory } from '@/types/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 interface EventModalProps {
   isOpen: boolean;
@@ -17,6 +18,13 @@ interface EventModalProps {
   event?: CalendarEvent | null;
   selectedDate?: Date;
 }
+
+const eventTypeOptions: { value: EventType, label: string, description: string }[] = [
+  { value: 'normal', label: 'Normal', description: 'Atividade comum do dia a dia.' },
+  { value: 'evento', label: 'Evento Especial', description: 'Grande evento que envolve vários segmentos.' },
+  { value: 'feriado', label: 'Feriado', description: 'Feriado oficial, sem atividades letivas.' },
+  { value: 'recesso', label: 'Recesso', description: 'Pausa nas atividades, como emendas de feriado.' },
+];
 
 export function EventModal({ 
   isOpen, 
@@ -32,8 +40,8 @@ export function EventModal({
     description: '',
     startDate: '',
     endDate: '',
-    category: ['geral'],
-    eventType: 'evento'
+    category: 'geral',
+    eventType: 'normal'
   });
 
   useEffect(() => {
@@ -107,6 +115,10 @@ export function EventModal({
       });
     }
   };
+  
+  const handleEventTypeChange = (value: EventType) => {
+    setFormData(prev => ({...prev, eventType: value}));
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -142,28 +154,30 @@ export function EventModal({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="startDate">Data de Início</Label>
-            <Input
-              id="startDate"
-              type="date"
-              value={formData.startDate}
-              onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-              required
-              disabled={isReadOnly}
-            />
-          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="startDate">Data de Início</Label>
+              <Input
+                id="startDate"
+                type="date"
+                value={formData.startDate}
+                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                required
+                disabled={isReadOnly}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="endDate">Data de Fim (opcional)</Label>
-            <Input
-              id="endDate"
-              type="date"
-              value={formData.endDate}
-              onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-              min={formData.startDate}
-              disabled={isReadOnly}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="endDate">Data de Fim (opcional)</Label>
+              <Input
+                id="endDate"
+                type="date"
+                value={formData.endDate}
+                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                min={formData.startDate}
+                disabled={isReadOnly}
+              />
+            </div>
           </div>
           
           <div className="space-y-2">
@@ -186,6 +200,33 @@ export function EventModal({
             </Select>
           </div>
 
+          <div className="space-y-3">
+            <Label>Tipo de Ocasião</Label>
+            <RadioGroup 
+              value={formData.eventType} 
+              onValueChange={handleEventTypeChange}
+              className="space-y-2"
+              disabled={isReadOnly}
+            >
+              {eventTypeOptions.map(option => (
+                <Label 
+                  key={option.value} 
+                  className={cn(
+                    "flex items-center gap-4 p-3 rounded-lg border transition-all cursor-pointer",
+                    formData.eventType === option.value 
+                      ? "bg-muted border-primary ring-2 ring-primary/50"
+                      : "hover:bg-muted/50"
+                  )}
+                >
+                  <RadioGroupItem value={option.value} />
+                  <div>
+                    <p className="font-medium">{option.label}</p>
+                    <p className="text-sm text-muted-foreground">{option.description}</p>
+                  </div>
+                </Label>
+              ))}
+            </RadioGroup>
+          </div>
 
           <div className="flex justify-between pt-4">
             <div>
