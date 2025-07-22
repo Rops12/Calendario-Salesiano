@@ -19,7 +19,7 @@ import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, C
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Star } from 'lucide-react';
 
 
 const Index = () => {
@@ -244,7 +244,9 @@ const Index = () => {
         return 'bg-red-100 text-red-800 border-red-200 font-semibold';
       case 'recesso':
         return 'bg-orange-100 text-orange-800 border-orange-200 font-semibold';
-      default: // normal e evento
+      case 'evento':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200 font-semibold';
+      default: // normal
         return 'bg-card hover:bg-muted/50 text-card-foreground border';
     }
   };
@@ -301,6 +303,7 @@ const Index = () => {
                         )}
                     >
                         <div className="flex items-start gap-3">
+                            {event.eventType === 'evento' && <Star className="w-4 h-4 mt-0.5 text-yellow-600 flex-shrink-0" />}
                             <div className="flex-1 min-w-0">
                                 <h4 className="font-medium text-foreground mb-1 break-words whitespace-normal leading-tight">
                                     {event.title}
