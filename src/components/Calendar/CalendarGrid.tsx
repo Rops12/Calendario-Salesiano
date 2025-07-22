@@ -80,6 +80,14 @@ export function CalendarGrid({
       return cn(baseStyles, "bg-gray-50 text-gray-400 border-gray-100");
     }
     
+    // Destaques para Feriados e Recessos
+    if (eventType === 'feriado') {
+      return cn(baseStyles, "bg-red-50 border-red-200");
+    }
+    if (eventType === 'recesso') {
+      return cn(baseStyles, "bg-orange-50 border-orange-200");
+    }
+    
     return cn(baseStyles, "bg-white border-gray-200 hover:border-gray-300 shadow-sm");
   };
   
