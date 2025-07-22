@@ -20,7 +20,7 @@ export function DraggableEvent({ event, index, onClick, isDraggable = true, isSp
     // Cores baseadas na categoria
     const categoryStyles = {
       geral: "bg-blue-50 text-blue-800 border-l-blue-500 hover:bg-blue-100",
-      infantil: "bg-yellow-50 text-yellow-800 border-l-yellow-500 hover:bg-yellow-100",
+      infantil: "bg-amber-50 text-amber-800 border-l-amber-500 hover:bg-amber-100",
       fundamental1: "bg-green-50 text-green-800 border-l-green-500 hover:bg-green-100",
       fundamental2: "bg-cyan-50 text-cyan-800 border-l-cyan-500 hover:bg-cyan-100",
       medio: "bg-purple-50 text-purple-800 border-l-purple-500 hover:bg-purple-100",

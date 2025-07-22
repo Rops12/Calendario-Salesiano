@@ -16,8 +16,8 @@ const getCategoryStyles = (category: EventCategory, isSelected: boolean) => {
       unselected: 'bg-blue-50 text-blue-600 hover:bg-blue-100'
     },
     infantil: {
-      selected: 'bg-yellow-500 text-white shadow-yellow-200',
-      unselected: 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100'
+      selected: 'bg-amber-500 text-white shadow-amber-200',
+      unselected: 'bg-amber-50 text-amber-700 hover:bg-amber-100'
     },
     fundamental1: {
       selected: 'bg-green-500 text-white shadow-green-200',
