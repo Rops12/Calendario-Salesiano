@@ -83,7 +83,7 @@ export function CategoryFilters({ selectedCategories, onToggleCategory }: Catego
                   "w-2 h-2 rounded-full",
                   isSelected ? "bg-white" : {
                     'bg-blue-500': category.value === 'geral',
-                    'bg-yellow-500': category.value === 'infantil',
+                    'bg-amber-500': category.value === 'infantil',
                     'bg-green-500': category.value === 'fundamental1',
                     'bg-cyan-500': category.value === 'fundamental2',
                     'bg-purple-500': category.value === 'medio',

@@ -319,7 +319,7 @@ const Index = () => {
                                     "w-2 h-2 rounded-full mr-2",
                                     {
                                         'bg-category-geral': event.category === 'geral',
-                                        'bg-category-infantil': event.category === 'infantil', 
+                                        'bg-category-infantil': event.category === 'infantil',
                                         'bg-category-fundamental1': event.category === 'fundamental1',
                                         'bg-category-fundamental2': event.category === 'fundamental2',
                                         'bg-category-medio': event.category === 'medio',

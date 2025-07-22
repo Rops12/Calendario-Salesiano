@@ -65,7 +65,7 @@ export default {
 				},
 				category: {
 					geral: 'hsl(var(--category-geral))',
-					infantil: 'hsl(var(--category-infantil))',
+					infantil: 'hsl(45, 86%, 62%)',
 					fundamental1: 'hsl(var(--category-fundamental1))',
 					fundamental2: 'hsl(var(--category-fundamental2))',
 					medio: 'hsl(var(--category-medio))',
