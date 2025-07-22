@@ -9,6 +9,33 @@ interface WeekViewProps {
   onDateClick?: (date: Date) => void;
 }
 
+// Função de estilo unificada, inspirada no DraggableEvent
+const getEventStyles = (event: CalendarEvent) => {
+    const baseStyles = "px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 break-words whitespace-normal leading-tight cursor-pointer border-l-4";
+    
+    const categoryStyles = {
+      geral: "bg-blue-50 text-blue-800 border-l-blue-500 hover:bg-blue-100",
+      infantil: "bg-amber-50 text-amber-800 border-l-amber-500 hover:bg-amber-100",
+      fundamental1: "bg-green-50 text-green-800 border-l-green-500 hover:bg-green-100",
+      fundamental2: "bg-cyan-50 text-cyan-800 border-l-cyan-500 hover:bg-cyan-100",
+      medio: "bg-purple-50 text-purple-800 border-l-purple-500 hover:bg-purple-100",
+      pastoral: "bg-pink-50 text-pink-800 border-l-pink-500 hover:bg-pink-100",
+      esportes: "bg-orange-50 text-orange-800 border-l-orange-500 hover:bg-orange-100",
+      robotica: "bg-indigo-50 text-indigo-800 border-l-indigo-500 hover:bg-indigo-100",
+      biblioteca: "bg-emerald-50 text-emerald-800 border-l-emerald-500 hover:bg-emerald-100",
+      nap: "bg-rose-50 text-rose-800 border-l-rose-500 hover:bg-rose-100"
+    };
+
+    if (event.eventType === 'feriado') {
+      return cn(baseStyles, "bg-red-100 text-red-800 border-l-red-500 font-bold");
+    }
+    if (event.eventType === 'recesso') {
+      return cn(baseStyles, "bg-orange-100 text-orange-800 border-l-orange-500 font-bold");
+    }
+
+    return cn(baseStyles, categoryStyles[event.category] || categoryStyles.geral);
+};
+
 export function WeekView({ 
   currentDate, 
   events, 
@@ -18,7 +45,6 @@ export function WeekView({
 }: WeekViewProps) {
   const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
   
-  // Get the start of the week (Sunday)
   const startOfWeek = new Date(currentDate);
   startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
   
@@ -43,14 +69,8 @@ export function WeekView({
     });
   };
 
-  const getCategoryColor = (category: EventCategory) => {
-    const categoryData = eventCategories.find(cat => cat.value === category);
-    return categoryData?.color || 'category-geral';
-  };
-
   return (
     <div className="bg-card shadow-soft animate-fade-in">
-      {/* ALTERAÇÃO AQUI: Removido max-w-7xl e mx-auto */}
       <div className="">
         {/* Week Header */}
         <div className="grid grid-cols-7 border-b">
@@ -59,7 +79,7 @@ export function WeekView({
               key={index}
               className={cn(
                 "p-4 text-center border-r bg-muted/50 cursor-pointer hover:bg-muted transition-colors",
-                isToday(day) && "bg-primary/10 border-primary/20"
+                isToday(day) && "bg-blue-50 border-b-2 border-blue-200"
               )}
                 onClick={onDateClick ? () => onDateClick(day) : undefined}
             >
@@ -68,7 +88,7 @@ export function WeekView({
               </div>
               <div className={cn(
                 "text-lg font-semibold mt-1",
-                isToday(day) && "text-primary"
+                isToday(day) && "text-blue-600"
               )}>
                 {day.getDate()}
               </div>
@@ -86,73 +106,35 @@ export function WeekView({
                 <div 
                   className={cn(
                     "p-2 cursor-pointer hover:bg-muted/30 transition-colors relative min-h-[400px]",
-                    isToday(day) && "bg-primary/5"
+                    isToday(day) && "bg-blue-50/50"
                   )}
                   onClick={() => onDateClick(day)}
                 >
                   <div className="space-y-1">
-                    {dayEvents.map((event, eventIndex) => {
-                      const getEventTypeStyles = () => {
-                        switch (event.eventType) {
-                          case 'feriado':
-                            return 'bg-red-100 text-red-800 border-red-200 font-semibold';
-                          case 'recesso':
-                            return 'bg-orange-100 text-orange-800 border-orange-200 font-semibold';
-                          case 'evento':
-                            return 'bg-blue-100 text-blue-800 border-blue-200 font-semibold';
-                          default: // normal
-                            const categoryStyles = {
-                              geral: 'bg-blue-100 text-blue-800 border-blue-200',
-                              infantil: 'bg-amber-100 text-amber-800 border-amber-200',
-                              fundamental1: 'bg-green-100 text-green-800 border-green-200',
-                              fundamental2: 'bg-cyan-100 text-cyan-800 border-cyan-200',
-                              medio: 'bg-purple-100 text-purple-800 border-purple-200',
-                              pastoral: 'bg-pink-100 text-pink-800 border-pink-200',
-                              esportes: 'bg-orange-100 text-orange-800 border-orange-200',
-                              robotica: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-                              biblioteca: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-                              nap: 'bg-rose-100 text-rose-800 border-rose-200'
-                            };
-                            return categoryStyles[event.category] || categoryStyles.geral;
-                        }
-                      };
-
-                      return (
+                    {dayEvents.map((event) => {
+                       const categoryLabel = eventCategories.find(c => c.value === event.category)?.label || event.category;
+                       return (
                         <div
                           key={event.id}
                           className={cn(
-                            "p-2 rounded text-xs font-medium cursor-pointer border mb-1",
-                            "transition-all duration-200 hover:scale-105 hover:shadow-medium",
-                            "break-words whitespace-normal leading-tight",
-                            getEventTypeStyles()
+                            getEventStyles(event),
+                            "hover:scale-100" // Desativar o scale para não cortar na visualização de semana
                           )}
                           onClick={(e) => {
                             e.stopPropagation();
                             onEventClick(event);
                           }}
                         >
-                          <div className="flex items-start gap-1">
-                            <div className={cn(
-                              "w-2 h-2 rounded-full flex-shrink-0 mt-0.5",
-                              {
-                                'bg-blue-500': event.category === 'geral',
-                                'bg-yellow-500': event.category === 'infantil', 
-                                'bg-green-500': event.category === 'fundamental1',
-                                'bg-cyan-500': event.category === 'fundamental2',
-                                'bg-purple-500': event.category === 'medio',
-                                'bg-pink-500': event.category === 'pastoral',
-                                'bg-orange-500': event.category === 'esportes',
-                                'bg-indigo-500': event.category === 'robotica',
-                                'bg-emerald-500': event.category === 'biblioteca',
-                                'bg-rose-500': event.category === 'nap'
-                              }
-                            )} />
-                            <span className="flex-1 text-xs leading-tight">
+                          <div className="flex flex-col gap-1">
+                            <div className="font-bold text-xs leading-tight">
                               {event.title}
-                            </span>
+                            </div>
+                            <div className="text-xs opacity-75 leading-tight">
+                              {categoryLabel}
+                            </div>
                           </div>
                         </div>
-                      );
+                       )
                     })}
                   </div>
                 </div>
