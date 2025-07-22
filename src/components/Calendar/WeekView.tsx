@@ -50,7 +50,8 @@ export function WeekView({
 
   return (
     <div className="bg-card shadow-soft animate-fade-in">
-      <div className="max-w-7xl mx-auto">
+      {/* ALTERAÇÃO AQUI: Removido max-w-7xl e mx-auto */}
+      <div className="">
         {/* Week Header */}
         <div className="grid grid-cols-7 border-b">
           {weekDays.map((day, index) => (
