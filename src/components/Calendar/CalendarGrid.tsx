@@ -57,7 +57,9 @@ export function CalendarGrid({
     return events.filter(event => {
       const eventStartDate = event.startDate.split('T')[0];
       const eventEndDate = event.endDate ? event.endDate.split('T')[0] : eventStartDate;
-      return dateStr >= eventStartDate && dateStr <= eventEndDate && selectedCategories.includes(event.category);
+      // Ajuste para lidar com `category` sendo um array no form mas uma string no evento
+      const eventCategory = Array.isArray(event.category) ? event.category[0] : event.category;
+      return dateStr >= eventStartDate && dateStr <= eventEndDate && selectedCategories.includes(eventCategory);
     });
   };
 
@@ -69,18 +71,15 @@ export function CalendarGrid({
     return null;
   };
 
-  const getDayBackgroundStyles = (eventType: string | null) => {
-    // Usando cores mais suaves (opacidade de 5%)
-    switch (eventType) {
-      case 'feriado':
-        return 'bg-destructive/5';
-      case 'recesso':
-        return 'bg-category-esportes/5'; // Laranja suave
-      case 'evento':
-        return 'bg-category-fundamental1/5'; // Verde suave
-      default:
-        return '';
+  const getDayCardStyles = (date: Date, eventType: string | null) => {
+    // Estilos para dias normais e dia atual, sem eventos especiais
+    if (!eventType) {
+      if (isToday(date)) return 'bg-white ring-2 ring-blue-500'; // Dia atual com borda azul
+      if (!isCurrentMonth(date)) return 'bg-gray-100 text-gray-400';
+      return 'bg-gray-50'; // Cor para dias normais
     }
+    // Retornaremos uma string vazia para os dias especiais por enquanto
+    return '';
   };
   
   const handleDragEnd = (result: DropResult) => {
@@ -103,7 +102,7 @@ export function CalendarGrid({
             {daysOfWeek.map((day) => (
               <div 
                 key={day} 
-                className="p-4 text-center font-semibold text-foreground"
+                className="p-4 text-center font-semibold text-gray-700"
               >
                 {day}
               </div>
@@ -124,10 +123,8 @@ export function CalendarGrid({
                       ref={provided.innerRef}
                       {...provided.droppableProps}
                       className={cn(
-                        "group relative min-h-[120px] p-3 rounded-lg bg-card shadow-soft cursor-pointer transition-all duration-200 hover:shadow-strong hover:-translate-y-1",
-                        !isCurrentMonth(date) && "bg-muted/40 text-muted-foreground/70",
-                        !specialEventType && isToday(date) && "bg-primary/10 ring-2 ring-primary/40",
-                        specialEventType && getDayBackgroundStyles(specialEventType),
+                        "group relative min-h-[140px] p-2 rounded-xl shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5",
+                        getDayCardStyles(date, specialEventType)
                       )}
                       onClick={() => onDateClick(date)}
                     >
@@ -145,30 +142,26 @@ export function CalendarGrid({
                       </Button>
 
                       <div className={cn(
-                        "flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold mb-3 transition-all duration-200",
-                        isToday(date) && "bg-primary text-primary-foreground",
-                        !isToday(date) && isCurrentMonth(date) && "text-foreground",
-                        !isCurrentMonth(date) && "text-muted-foreground/50"
+                        "flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold mb-2 transition-all duration-200",
+                        isToday(date) && "bg-blue-600 text-white",
+                        !isToday(date) && isCurrentMonth(date) && "text-gray-800",
+                        !isCurrentMonth(date) && "text-gray-400"
                       )}>
                         {date.getDate()}
                       </div>
 
                       <div className="space-y-1">
-                        {dayEvents.slice(0, 2).map((event, eventIndex) => (
+                        {dayEvents.map((event, eventIndex) => (
                           <DraggableEvent
                             key={event.id}
                             event={event}
                             index={eventIndex}
                             onClick={onEventClick}
                             isDraggable={!!onEventDrop}
+                            isSpecialDay={!!specialEventType}
                           />
                         ))}
                         
-                        {dayEvents.length > 2 && (
-                          <div className="text-xs text-muted-foreground px-2 py-1 rounded-full bg-muted/50 border border-border/30 hover:bg-muted/70 transition-colors">
-                            +{dayEvents.length - 2} mais
-                          </div>
-                        )}
                         {provided.placeholder}
                       </div>
                     </div>
