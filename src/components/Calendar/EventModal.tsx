@@ -6,7 +6,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CalendarEvent, EventFormData, eventCategories, EventType, EventCategory } from '@/types/calendar';
-import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
 interface EventModalProps {
@@ -18,6 +17,14 @@ interface EventModalProps {
   selectedDate?: Date;
 }
 
+// Adicionamos um helper para os tipos de evento para deixar o código mais limpo
+const eventTypes: { value: EventType; label: string }[] = [
+  { value: 'normal', label: 'Normal' },
+  { value: 'evento', label: 'Evento Especial' },
+  { value: 'feriado', label: 'Feriado' },
+  { value: 'recesso', label: 'Recesso' },
+];
+
 export function EventModal({ 
   isOpen, 
   onClose, 
@@ -27,13 +34,15 @@ export function EventModal({
   selectedDate 
 }: EventModalProps) {
   const { toast } = useToast();
+  
+  // Pequena correção aqui: category inicia como string, não como array.
   const [formData, setFormData] = useState<EventFormData>({
     title: '',
     description: '',
     startDate: '',
     endDate: '',
-    category: ['geral'],
-    eventType: 'evento'
+    category: 'geral', 
+    eventType: 'normal'
   });
 
   useEffect(() => {
@@ -66,10 +75,6 @@ export function EventModal({
       });
     }
   }, [event, selectedDate, isOpen]);
-
-  const handleCategoryChange = (value: EventCategory) => {
-    setFormData(prev => ({ ...prev, category: value }));
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -170,7 +175,7 @@ export function EventModal({
             <Label htmlFor="category">Segmento</Label>
             <Select
               value={formData.category}
-              onValueChange={handleCategoryChange}
+              onValueChange={(value: EventCategory) => setFormData(prev => ({ ...prev, category: value }))}
               disabled={isReadOnly}
             >
               <SelectTrigger>
@@ -185,6 +190,28 @@ export function EventModal({
               </SelectContent>
             </Select>
           </div>
+          
+          {/* CÓDIGO NOVO ADICIONADO AQUI */}
+          <div className="space-y-2">
+            <Label htmlFor="eventType">Tipo de Evento</Label>
+            <Select
+              value={formData.eventType}
+              onValueChange={(value: EventType) => setFormData(prev => ({ ...prev, eventType: value }))}
+              disabled={isReadOnly}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                {eventTypes.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {/* FIM DO CÓDIGO ADICIONADO */}
 
 
           <div className="flex justify-between pt-4">
