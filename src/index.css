@@ -75,7 +75,8 @@
     @apply border-border;
   }
   body {
-    @apply bg-gray-50 text-foreground;
+    /* A LINHA ABAIXO FOI CORRIGIDA */
+    @apply bg-background text-foreground;
   }
 }
 
