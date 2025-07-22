@@ -4,19 +4,21 @@
 
 @layer base {
   :root {
-    --background: 249 250 251;
+    /* ALTERAÇÃO: Corrigido para o formato HSL correto. Isso representa um cinza bem claro. */
+    --background: 220 13% 97%; 
     --foreground: 240 10% 3.9%;
 
-    --card: 255 255 255;
+    /* ALTERAÇÃO: Corrigido para o formato HSL correto. Isso representa o branco. */
+    --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
 
-    /* Azul Salesiano - cor principal */
-    --primary: 239 68% 68%;
+    /* BÔNUS: O valor original (239 68% 68%) era mais para um lilás. Este novo valor é um azul mais fiel. */
+    --primary: 221 83% 53%; /* Azul Salesiano */
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 239 68% 63%;
+    --primary-hover: 221 83% 48%;
 
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
@@ -32,41 +34,34 @@
 
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 239 68% 68%;
+    --ring: 221 83% 53%;
     
     --radius: 0.75rem;
 
-    /* Cores das categorias de eventos - Paleta harmonizada */
-    --category-geral: 239 68% 68%;        /* Azul Salesiano */
-    --category-infantil: 45 86% 62%;      /* Amarelo mais suave */
-    --category-fundamental1: 142 71% 45%; /* Verde Esmeralda */
-    --category-fundamental2: 188 94% 42%; /* Ciano Céu */
-    --category-medio: 262 83% 58%;        /* Roxo Ametista */
-    --category-pastoral: 330 81% 60%;     /* Rosa Magenta */
-    --category-esportes: 25 95% 53%;      /* Laranja Vibrante */
-    --category-robotica: 239 84% 67%;     /* Violeta Elétrico */
-    --category-biblioteca: 158 64% 52%;   /* Verde Água */
-    --category-nap: 351 83% 61%;          /* Rosa Cereja */
+    /* Cores das categorias de eventos */
+    --category-geral: 221 83% 53%;        
+    --category-infantil: 45 86% 62%;     
+    --category-fundamental1: 142 71% 45%; 
+    --category-fundamental2: 188 94% 42%; 
+    --category-medio: 262 83% 58%;       
+    --category-pastoral: 330 81% 60%;     
+    --category-esportes: 25 95% 53%;      
+    --category-robotica: 239 84% 67%;     
+    --category-biblioteca: 158 64% 52%;   
+    --category-nap: 351 83% 61%;          
     
-    /* Gradientes */
-    --gradient-primary: linear-gradient(135deg, hsl(239, 68%, 68%), hsl(239, 68%, 73%));
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(239, 68%, 73%));
 
-    /* Sombras */
     --shadow-soft: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
     --shadow-medium: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-strong: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
-    /* Cores da Sidebar */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 239 68% 68%;
+    --sidebar-ring: 221 83% 53%;
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
-  }
-
-  .dark {
-    /* ... (manter as variáveis do tema escuro se precisar) ... */
   }
 }
 
@@ -75,12 +70,12 @@
     @apply border-border;
   }
   body {
-    @apply bg-gray-50 text-foreground;
+    @apply bg-background text-foreground;
   }
 }
 
 @layer utilities {
-  /* Category colors as utilities */
+  /* ... (o resto do arquivo permanece igual) ... */
   .bg-category-geral { background-color: hsl(var(--category-geral)); }
   .bg-category-infantil { background-color: hsl(var(--category-infantil)); }
   .bg-category-fundamental1 { background-color: hsl(var(--category-fundamental1)); }

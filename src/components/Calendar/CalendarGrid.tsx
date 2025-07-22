@@ -97,7 +97,8 @@ export function CalendarGrid({
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="bg-gray-50 min-h-screen">
-        <div className="max-w-7xl mx-auto px-6 py-6">
+        {/* ALTERAÇÃO AQUI: Removido max-w-7xl e mx-auto */}
+        <div className="px-6 py-6">
           {/* Calendar Header */}
           <div className="grid grid-cols-7 gap-4 mb-4">
             {daysOfWeek.map((day) => (
