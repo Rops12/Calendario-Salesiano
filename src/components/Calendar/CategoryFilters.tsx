@@ -63,6 +63,7 @@ export function CategoryFilters({ selectedCategories, onToggleCategory }: Catego
   return (
     <div className="p-4 bg-card border-b shadow-soft">
       <div className="max-w-7xl mx-auto">
+        <h3 className="text-sm font-semibold text-muted-foreground mb-2">SEGMENTOS</h3>
         <div className="flex flex-wrap gap-2">
           {eventCategories.map((category) => {
             const isSelected = selectedCategories.includes(category.value);
@@ -77,16 +78,7 @@ export function CategoryFilters({ selectedCategories, onToggleCategory }: Catego
                 <div 
                   className={cn(
                     "w-3 h-3 rounded-full",
-                    category.value === 'geral' && 'bg-category-geral',
-                    category.value === 'infantil' && 'bg-category-infantil',
-                    category.value === 'fundamental1' && 'bg-category-fundamental1',
-                    category.value === 'fundamental2' && 'bg-category-fundamental2',
-                    category.value === 'medio' && 'bg-category-medio',
-                    category.value === 'pastoral' && 'bg-category-pastoral',
-                    category.value === 'esportes' && 'bg-category-esportes',
-                    category.value === 'robotica' && 'bg-category-robotica',
-                    category.value === 'biblioteca' && 'bg-category-biblioteca',
-                    category.value === 'nap' && 'bg-category-nap',
+                    `bg-${category.color}`,
                     isSelected && "bg-white"
                   )} 
                 />
