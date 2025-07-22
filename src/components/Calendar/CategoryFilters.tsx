@@ -62,7 +62,8 @@ const getCategoryStyles = (category: EventCategory, isSelected: boolean) => {
 export function CategoryFilters({ selectedCategories, onToggleCategory }: CategoryFiltersProps) {
   return (
     <div className="bg-white border-b border-gray-100 shadow-sm">
-      <div className="max-w-7xl mx-auto px-6 py-4">
+      {/* ALTERAÇÃO AQUI: Removido max-w-7xl e mx-auto */}
+      <div className="px-6 py-4">
         <div className="flex items-center gap-3 mb-3">
           <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">
             Segmentos
