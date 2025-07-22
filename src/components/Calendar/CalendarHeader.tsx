@@ -78,7 +78,8 @@ export function CalendarHeader({
 
   return (
     <header className="bg-[#4F46E5] shadow-lg">
-      <div className="max-w-7xl mx-auto px-6 py-4">
+      {/* ALTERAÇÃO AQUI: Removido max-w-7xl e mx-auto */}
+      <div className="px-6 py-4">
         {/* Top Row */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
