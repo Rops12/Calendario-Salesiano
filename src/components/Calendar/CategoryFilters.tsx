@@ -20,7 +20,7 @@ export function CategoryFilters({ selectedCategories, onToggleCategory }: Catego
         <div className="flex flex-wrap gap-2">
           {eventCategories.map((category) => {
             const isSelected = selectedCategories.includes(category.value);
-            const { background, foreground, border, hoverBackground } = category.tw;
+            const { background, foreground, border } = category.tw;
 
             return (
               <Badge
@@ -28,8 +28,9 @@ export function CategoryFilters({ selectedCategories, onToggleCategory }: Catego
                 variant="outline"
                 className={cn(
                   "cursor-pointer transition-all duration-200 hover:scale-105 flex items-center gap-2 px-3 py-1.5 rounded-full font-medium text-sm border-2",
-                  isSelected 
-                    ? `bg-opacity-100 ${background} ${foreground} ${border}`
+                  isSelected
+                    // Se selecionado, usamos a cor de fundo como cor da borda para "escondê-la"
+                    ? `bg-opacity-100 ${background} ${foreground} border-[${getCategoryData(category.value)?.colorHex}]`
                     : `bg-gray-100 text-gray-500 border-transparent hover:bg-gray-200`
                 )}
                 onClick={() => onToggleCategory(category.value)}
@@ -44,3 +45,8 @@ export function CategoryFilters({ selectedCategories, onToggleCategory }: Catego
     </div>
   );
 }
+
+// Função auxiliar para obter dados da categoria
+const getCategoryData = (category: EventCategory) => {
+  return eventCategories.find(cat => cat.value === category);
+};
