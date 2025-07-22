@@ -1,6 +1,7 @@
 import { Draggable } from '@hello-pangea/dnd';
 import { CalendarEvent, eventCategories, EventCategory } from '@/types/calendar';
 import { cn } from '@/lib/utils';
+import { Star } from 'lucide-react';
 
 interface DraggableEventProps {
   event: CalendarEvent;
@@ -15,7 +16,7 @@ export function DraggableEvent({ event, index, onClick, isDraggable = true, isSp
   const categoryLabel = eventCategories.find(c => c.value === event.category)?.label || event.category;
 
   const getEventStyles = () => {
-    const baseStyles = "px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 break-words whitespace-normal leading-tight cursor-pointer border-l-4";
+    const baseStyles = "px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 break-words whitespace-normal leading-tight cursor-pointer border-l-4 flex items-start gap-2";
     
     // Cores baseadas na categoria
     const categoryStyles = {
@@ -33,10 +34,13 @@ export function DraggableEvent({ event, index, onClick, isDraggable = true, isSp
 
     // Estilos especiais para tipos de evento
     if (event.eventType === 'feriado') {
-      return cn(baseStyles, "bg-red-100 text-red-800 border-l-red-500 font-bold");
+      return cn(baseStyles, "bg-red-100 text-red-900 border-l-red-500 font-semibold");
     }
     if (event.eventType === 'recesso') {
-      return cn(baseStyles, "bg-orange-100 text-orange-800 border-l-orange-500 font-bold");
+      return cn(baseStyles, "bg-orange-100 text-orange-900 border-l-orange-500 font-semibold");
+    }
+    if (event.eventType === 'evento') {
+      return cn(baseStyles, "bg-yellow-100 text-yellow-900 border-l-yellow-500 font-semibold");
     }
 
     return cn(baseStyles, categoryStyles[event.category] || categoryStyles.geral);
@@ -60,7 +64,8 @@ export function DraggableEvent({ event, index, onClick, isDraggable = true, isSp
             }
           }}
         >
-          <div className="flex flex-col gap-1">
+          {event.eventType === 'evento' && <Star className="w-3 h-3 mt-0.5 text-yellow-600 flex-shrink-0" />}
+          <div className="flex flex-col gap-1 flex-grow">
             <div className="font-bold text-xs leading-tight">
               {event.title}
             </div>
