@@ -250,7 +250,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50">
       <CalendarHeader
         currentDate={currentDate}
         onNavigate={handleNavigate}
@@ -271,7 +271,7 @@ const Index = () => {
         onToggleCategory={handleToggleCategory}
       />
       
-      <div className="p-6">
+      <div>
         <div key={currentDate.getTime()} className={animationClass}>
           {renderView()}
         </div>

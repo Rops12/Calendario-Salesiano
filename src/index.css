@@ -4,19 +4,19 @@
 
 @layer base {
   :root {
-    --background: 240 10% 98%;
+    --background: 249 250 251;
     --foreground: 240 10% 3.9%;
 
-    --card: 0 0% 100%;
+    --card: 255 255 255;
     --card-foreground: 240 10% 3.9%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
 
     /* Azul Salesiano - cor principal */
-    --primary: 217 91% 60%;
+    --primary: 239 68% 68%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 217 91% 55%;
+    --primary-hover: 239 68% 63%;
 
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
@@ -30,37 +30,37 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 217 91% 60%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 239 68% 68%;
     
     --radius: 0.75rem;
 
     /* Cores das categorias de eventos - Paleta harmonizada */
-    --category-geral: 217 91% 60%;        /* Azul Salesiano */
-    --category-infantil: 45 95% 60%;      /* Amarelo Ouro */
-    --category-fundamental1: 140 65% 50%; /* Verde Esmeralda */
-    --category-fundamental2: 200 75% 55%; /* Ciano Céu */
-    --category-medio: 280 70% 60%;      /* Roxo Ametista */
-    --category-pastoral: 320 65% 60%;     /* Rosa Magenta */
-    --category-esportes: 25 80% 55%;      /* Laranja Vibrante */
-    --category-robotica: 260 65% 60%;    /* Violeta Elétrico */
-    --category-biblioteca: 160 55% 50%;   /* Verde Água */
-    --category-nap: 340 70% 60%;          /* Rosa Cereja */
+    --category-geral: 239 68% 68%;        /* Azul Salesiano */
+    --category-infantil: 45 93% 58%;      /* Amarelo Ouro */
+    --category-fundamental1: 142 71% 45%; /* Verde Esmeralda */
+    --category-fundamental2: 188 94% 42%; /* Ciano Céu */
+    --category-medio: 262 83% 58%;        /* Roxo Ametista */
+    --category-pastoral: 330 81% 60%;     /* Rosa Magenta */
+    --category-esportes: 25 95% 53%;      /* Laranja Vibrante */
+    --category-robotica: 239 84% 67%;     /* Violeta Elétrico */
+    --category-biblioteca: 158 64% 52%;   /* Verde Água */
+    --category-nap: 351 83% 61%;          /* Rosa Cereja */
     
     /* Gradientes */
-    --gradient-primary: linear-gradient(135deg, hsl(217, 91%, 60%), hsl(210, 91%, 65%));
+    --gradient-primary: linear-gradient(135deg, hsl(239, 68%, 68%), hsl(239, 68%, 73%));
 
     /* Sombras */
-    --shadow-soft: 0 2px 8px hsl(217 20% 20% / 0.08);
-    --shadow-medium: 0 4px 16px hsl(217 20% 20% / 0.12);
-    --shadow-strong: 0 8px 32px hsl(217 20% 20% / 0.16);
+    --shadow-soft: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-medium: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-strong: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
     /* Cores da Sidebar */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 239 68% 68%;
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
   }
@@ -75,7 +75,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-gray-50 text-foreground;
   }
 }
 

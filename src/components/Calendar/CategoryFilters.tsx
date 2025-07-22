@@ -8,48 +8,48 @@ interface CategoryFiltersProps {
 }
 
 const getCategoryStyles = (category: EventCategory, isSelected: boolean) => {
-  const baseStyles = "cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-soft flex items-center gap-2 px-3 py-1.5 rounded-full font-medium border-2";
+  const baseStyles = "cursor-pointer transition-all duration-200 hover:scale-105 flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm border-0 shadow-sm";
   
   const categoryMap = {
     geral: {
-      selected: 'bg-category-geral text-white border-category-geral',
-      unselected: 'border-category-geral text-category-geral hover:bg-category-geral hover:bg-opacity-10 bg-transparent'
+      selected: 'bg-blue-500 text-white shadow-blue-200',
+      unselected: 'bg-blue-50 text-blue-600 hover:bg-blue-100'
     },
     infantil: {
-      selected: 'bg-category-infantil text-white border-category-infantil',
-      unselected: 'border-category-infantil text-category-infantil hover:bg-category-infantil hover:bg-opacity-10 bg-transparent'
+      selected: 'bg-yellow-500 text-white shadow-yellow-200',
+      unselected: 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100'
     },
     fundamental1: {
-      selected: 'bg-category-fundamental1 text-white border-category-fundamental1',
-      unselected: 'border-category-fundamental1 text-category-fundamental1 hover:bg-category-fundamental1 hover:bg-opacity-10 bg-transparent'
+      selected: 'bg-green-500 text-white shadow-green-200',
+      unselected: 'bg-green-50 text-green-600 hover:bg-green-100'
     },
     fundamental2: {
-      selected: 'bg-category-fundamental2 text-white border-category-fundamental2',
-      unselected: 'border-category-fundamental2 text-category-fundamental2 hover:bg-category-fundamental2 hover:bg-opacity-10 bg-transparent'
+      selected: 'bg-cyan-500 text-white shadow-cyan-200',
+      unselected: 'bg-cyan-50 text-cyan-600 hover:bg-cyan-100'
     },
     medio: {
-      selected: 'bg-category-medio text-white border-category-medio',
-      unselected: 'border-category-medio text-category-medio hover:bg-category-medio hover:bg-opacity-10 bg-transparent'
+      selected: 'bg-purple-500 text-white shadow-purple-200',
+      unselected: 'bg-purple-50 text-purple-600 hover:bg-purple-100'
     },
     pastoral: {
-      selected: 'bg-category-pastoral text-white border-category-pastoral',
-      unselected: 'border-category-pastoral text-category-pastoral hover:bg-category-pastoral hover:bg-opacity-10 bg-transparent'
+      selected: 'bg-pink-500 text-white shadow-pink-200',
+      unselected: 'bg-pink-50 text-pink-600 hover:bg-pink-100'
     },
     esportes: {
-      selected: 'bg-category-esportes text-white border-category-esportes',
-      unselected: 'border-category-esportes text-category-esportes hover:bg-category-esportes hover:bg-opacity-10 bg-transparent'
+      selected: 'bg-orange-500 text-white shadow-orange-200',
+      unselected: 'bg-orange-50 text-orange-600 hover:bg-orange-100'
     },
     robotica: {
-      selected: 'bg-category-robotica text-white border-category-robotica',
-      unselected: 'border-category-robotica text-category-robotica hover:bg-category-robotica hover:bg-opacity-10 bg-transparent'
+      selected: 'bg-indigo-500 text-white shadow-indigo-200',
+      unselected: 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
     },
     biblioteca: {
-      selected: 'bg-category-biblioteca text-white border-category-biblioteca',
-      unselected: 'border-category-biblioteca text-category-biblioteca hover:bg-category-biblioteca hover:bg-opacity-10 bg-transparent'
+      selected: 'bg-emerald-500 text-white shadow-emerald-200',
+      unselected: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
     },
     nap: {
-      selected: 'bg-category-nap text-white border-category-nap',
-      unselected: 'border-category-nap text-category-nap hover:bg-category-nap hover:bg-opacity-10 bg-transparent'
+      selected: 'bg-rose-500 text-white shadow-rose-200',
+      unselected: 'bg-rose-50 text-rose-600 hover:bg-rose-100'
     }
   };
   
@@ -61,9 +61,13 @@ const getCategoryStyles = (category: EventCategory, isSelected: boolean) => {
 
 export function CategoryFilters({ selectedCategories, onToggleCategory }: CategoryFiltersProps) {
   return (
-    <div className="p-4 bg-card border-b shadow-soft">
-      <div className="max-w-7xl mx-auto">
-        <h3 className="text-sm font-semibold text-muted-foreground mb-2">SEGMENTOS</h3>
+    <div className="bg-white border-b border-gray-100 shadow-sm">
+      <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="flex items-center gap-3 mb-3">
+          <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">
+            Segmentos
+          </h3>
+        </div>
         <div className="flex flex-wrap gap-2">
           {eventCategories.map((category) => {
             const isSelected = selectedCategories.includes(category.value);
@@ -75,14 +79,22 @@ export function CategoryFilters({ selectedCategories, onToggleCategory }: Catego
                 className={getCategoryStyles(category.value, isSelected)}
                 onClick={() => onToggleCategory(category.value)}
               >
-                <div 
-                  className={cn(
-                    "w-3 h-3 rounded-full",
-                    `bg-${category.color}`,
-                    isSelected && "bg-white"
-                  )} 
-                />
-                <span className="text-sm font-medium">{category.label}</span>
+                <div className={cn(
+                  "w-2 h-2 rounded-full",
+                  isSelected ? "bg-white" : {
+                    'bg-blue-500': category.value === 'geral',
+                    'bg-yellow-500': category.value === 'infantil',
+                    'bg-green-500': category.value === 'fundamental1',
+                    'bg-cyan-500': category.value === 'fundamental2',
+                    'bg-purple-500': category.value === 'medio',
+                    'bg-pink-500': category.value === 'pastoral',
+                    'bg-orange-500': category.value === 'esportes',
+                    'bg-indigo-500': category.value === 'robotica',
+                    'bg-emerald-500': category.value === 'biblioteca',
+                    'bg-rose-500': category.value === 'nap'
+                  }
+                )} />
+                <span className="font-medium">{category.label}</span>
               </Badge>
             );
           })}

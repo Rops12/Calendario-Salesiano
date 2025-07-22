@@ -24,7 +24,7 @@ export function CalendarGrid({
   onAddNewEvent,
   onEventDrop
 }: CalendarGridProps) {
-  const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const daysOfWeek = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
   const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
   const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
@@ -57,7 +57,6 @@ export function CalendarGrid({
     return events.filter(event => {
       const eventStartDate = event.startDate.split('T')[0];
       const eventEndDate = event.endDate ? event.endDate.split('T')[0] : eventStartDate;
-      // Ajuste para lidar com `category` sendo um array no form mas uma string no evento
       const eventCategory = Array.isArray(event.category) ? event.category[0] : event.category;
       return dateStr >= eventStartDate && dateStr <= eventEndDate && selectedCategories.includes(eventCategory);
     });
@@ -72,14 +71,17 @@ export function CalendarGrid({
   };
 
   const getDayCardStyles = (date: Date, eventType: string | null) => {
-    // Estilos para dias normais e dia atual, sem eventos especiais
-    if (!eventType) {
-      if (isToday(date)) return 'bg-white ring-2 ring-blue-500'; // Dia atual com borda azul
-      if (!isCurrentMonth(date)) return 'bg-gray-100 text-gray-400';
-      return 'bg-gray-50'; // Cor para dias normais
+    const baseStyles = "group relative min-h-[140px] p-3 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 border";
+    
+    if (isToday(date)) {
+      return cn(baseStyles, "bg-blue-50 border-blue-200 shadow-blue-100");
     }
-    // Retornaremos uma string vazia para os dias especiais por enquanto
-    return '';
+    
+    if (!isCurrentMonth(date)) {
+      return cn(baseStyles, "bg-gray-50 text-gray-400 border-gray-100");
+    }
+    
+    return cn(baseStyles, "bg-white border-gray-200 hover:border-gray-300 shadow-sm");
   };
   
   const handleDragEnd = (result: DropResult) => {
@@ -95,14 +97,14 @@ export function CalendarGrid({
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="bg-transparent animate-fade-in">
-        <div className="max-w-7xl mx-auto">
+      <div className="bg-gray-50 min-h-screen">
+        <div className="max-w-7xl mx-auto px-6 py-6">
           {/* Calendar Header */}
-          <div className="grid grid-cols-7">
+          <div className="grid grid-cols-7 gap-4 mb-4">
             {daysOfWeek.map((day) => (
               <div 
                 key={day} 
-                className="p-4 text-center font-semibold text-gray-700"
+                className="text-center font-semibold text-gray-700 py-3"
               >
                 {day}
               </div>
@@ -110,7 +112,7 @@ export function CalendarGrid({
           </div>
 
           {/* Calendar Body */}
-          <div className="grid grid-cols-7 gap-2">
+          <div className="grid grid-cols-7 gap-4">
             {days.map((date, index) => {
               const dayEvents = getEventsForDate(date);
               const dateStr = date.toISOString().split('T')[0];
@@ -122,36 +124,33 @@ export function CalendarGrid({
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className={cn(
-                        "group relative min-h-[140px] p-2 rounded-xl shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5",
-                        getDayCardStyles(date, specialEventType)
-                      )}
+                      className={getDayCardStyles(date, specialEventType)}
                       onClick={() => onDateClick(date)}
                     >
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute top-1 right-1 h-7 w-7 rounded-full opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
+                        className="absolute top-2 right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 bg-white shadow-sm hover:bg-gray-50"
                         onClick={(e) => {
                           e.stopPropagation();
                           onAddNewEvent(date);
                         }}
                         aria-label="Adicionar novo evento"
                       >
-                        <Plus className="h-4 w-4" />
+                        <Plus className="h-3 w-3" />
                       </Button>
 
                       <div className={cn(
-                        "flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold mb-2 transition-all duration-200",
-                        isToday(date) && "bg-blue-600 text-white",
-                        !isToday(date) && isCurrentMonth(date) && "text-gray-800",
+                        "flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold mb-3 transition-all duration-200",
+                        isToday(date) && "bg-blue-600 text-white shadow-lg",
+                        !isToday(date) && isCurrentMonth(date) && "text-gray-800 hover:bg-gray-100",
                         !isCurrentMonth(date) && "text-gray-400"
                       )}>
                         {date.getDate()}
                       </div>
 
                       <div className="space-y-1">
-                        {dayEvents.map((event, eventIndex) => (
+                        {dayEvents.slice(0, 3).map((event, eventIndex) => (
                           <DraggableEvent
                             key={event.id}
                             event={event}
@@ -161,6 +160,12 @@ export function CalendarGrid({
                             isSpecialDay={!!specialEventType}
                           />
                         ))}
+                        
+                        {dayEvents.length > 3 && (
+                          <div className="text-xs text-gray-500 font-medium px-2 py-1 bg-gray-100 rounded-md">
+                            +{dayEvents.length - 3} mais
+                          </div>
+                        )}
                         
                         {provided.placeholder}
                       </div>

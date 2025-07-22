@@ -25,9 +25,9 @@ export function ViewSwitcher({ currentView, onViewChange }: ViewSwitcherProps) {
           size="sm"
           onClick={() => onViewChange(id)}
           className={cn(
-            "flex items-center gap-2 transition-all duration-200 relative text-white",
+            "flex items-center gap-2 transition-all duration-200 relative text-white px-4 py-2 rounded-md font-medium",
             currentView === id 
-              ? "bg-white/20 shadow-soft text-white font-semibold" 
+              ? "bg-white/20 shadow-sm text-white font-semibold" 
               : "text-white/70 hover:text-white hover:bg-white/10"
           )}
         >
