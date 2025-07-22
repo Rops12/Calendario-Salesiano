@@ -2,45 +2,104 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Design system para Calendário Salesiano - todas as cores em HSL */
-
 @layer base {
   :root {
-    --background: 0 0% 100%; /* Alterado para branco puro */
-    --foreground: 215 25% 15%;
+    --background: 240 10% 98%;
+    --foreground: 240 10% 3.9%;
 
-    --card-day: 220 13% 96%; /* Cor para os cards de dias normais */
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 15%;
+    --card-foreground: 240 10% 3.9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 15%;
+    --popover-foreground: 240 10% 3.9%;
 
     /* Azul Salesiano - cor principal */
     --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
     --primary-hover: 217 91% 55%;
 
-    --secondary: 217 50% 95%;
-    --secondary-foreground: 217 25% 25%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
 
-    --muted: 217 20% 94%;
-    --muted-foreground: 217 10% 55%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
 
-    --accent: 217 50% 95%;
-    --accent-foreground: 217 25% 25%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
 
-    --destructive: 0 75% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 217 20% 88%;
-    --input: 217 20% 88%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
     --ring: 217 91% 60%;
     
-    /* ... o restante das cores ... */
+    --radius: 0.75rem;
 
-    --radius: 0.75rem; /* Aumentado para cantos mais arredondados */
+    /* Cores das categorias de eventos - Paleta harmonizada */
+    --category-geral: 217 91% 60%;        /* Azul Salesiano */
+    --category-infantil: 45 95% 60%;      /* Amarelo Ouro */
+    --category-fundamental1: 140 65% 50%; /* Verde Esmeralda */
+    --category-fundamental2: 200 75% 55%; /* Ciano Céu */
+    --category-medio: 280 70% 60%;      /* Roxo Ametista */
+    --category-pastoral: 320 65% 60%;     /* Rosa Magenta */
+    --category-esportes: 25 80% 55%;      /* Laranja Vibrante */
+    --category-robotica: 260 65% 60%;    /* Violeta Elétrico */
+    --category-biblioteca: 160 55% 50%;   /* Verde Água */
+    --category-nap: 340 70% 60%;          /* Rosa Cereja */
+    
+    /* Gradientes */
+    --gradient-primary: linear-gradient(135deg, hsl(217, 91%, 60%), hsl(210, 91%, 65%));
+
+    /* Sombras */
+    --shadow-soft: 0 2px 8px hsl(217 20% 20% / 0.08);
+    --shadow-medium: 0 4px 16px hsl(217 20% 20% / 0.12);
+    --shadow-strong: 0 8px 32px hsl(217 20% 20% / 0.16);
+
+    /* Cores da Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
   }
-  
-  /* ... o restante do arquivo ... */
+
+  .dark {
+    /* ... (manter as variáveis do tema escuro se precisar) ... */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Category colors as utilities */
+  .bg-category-geral { background-color: hsl(var(--category-geral)); }
+  .bg-category-infantil { background-color: hsl(var(--category-infantil)); }
+  .bg-category-fundamental1 { background-color: hsl(var(--category-fundamental1)); }
+  .bg-category-fundamental2 { background-color: hsl(var(--category-fundamental2)); }
+  .bg-category-medio { background-color: hsl(var(--category-medio)); }
+  .bg-category-pastoral { background-color: hsl(var(--category-pastoral)); }
+  .bg-category-esportes { background-color: hsl(var(--category-esportes)); }
+  .bg-category-robotica { background-color: hsl(var(--category-robotica)); }
+  .bg-category-biblioteca { background-color: hsl(var(--category-biblioteca)); }
+  .bg-category-nap { background-color: hsl(var(--category-nap)); }
+
+  .text-category-geral { color: hsl(var(--category-geral)); }
+  .text-category-infantil { color: hsl(var(--category-infantil)); }
+  .text-category-fundamental1 { color: hsl(var(--category-fundamental1)); }
+  .text-category-fundamental2 { color: hsl(var(--category-fundamental2)); }
+  .text-category-medio { color: hsl(var(--category-medio)); }
+  .text-category-pastoral { color: hsl(var(--category-pastoral)); }
+  .text-category-esportes { color: hsl(var(--category-esportes)); }
+  .text-category-robotica { color: hsl(var(--category-robotica)); }
+  .text-category-biblioteca { color: hsl(var(--category-biblioteca)); }
+  .text-category-nap { color: hsl(var(--category-nap)); }
 }
