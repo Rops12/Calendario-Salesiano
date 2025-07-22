@@ -13,6 +13,7 @@ interface DraggableEventProps {
 export function DraggableEvent({ event, index, onClick, isDraggable = true }: DraggableEventProps) {
   
   const categoryInfo = eventCategories.find(c => c.value === event.category);
+  const categoryLabel = categoryInfo?.label || event.category;
 
   const getEventStyles = () => {
     const baseStyles = "px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 break-words whitespace-normal leading-tight cursor-pointer border-l-4 flex items-start gap-2";
@@ -57,8 +58,13 @@ export function DraggableEvent({ event, index, onClick, isDraggable = true }: Dr
           }}
         >
           {event.eventType === 'evento' && <Star className="w-3 h-3 mt-0.5 text-yellow-600 flex-shrink-0" />}
-          <div className="flex-grow font-bold leading-tight">
-            {event.title}
+          <div className="flex flex-col gap-1 flex-grow">
+            <div className="font-bold text-xs leading-tight">
+              {event.title}
+            </div>
+            <div className="text-xs opacity-75 leading-tight">
+              {categoryLabel}
+            </div>
           </div>
         </div>
       )}
