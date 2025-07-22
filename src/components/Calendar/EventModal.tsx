@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CalendarEvent, EventFormData, eventCategories, EventType, EventCategory } from '@/types/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -43,7 +43,7 @@ export function EventModal({
         description: event.description || '',
         startDate: event.startDate.split('T')[0],
         endDate: event.endDate ? event.endDate.split('T')[0] : '',
-        category: Array.isArray(event.category) ? event.category : [event.category],
+        category: event.category,
         eventType: event.eventType
       });
     } else if (selectedDate) {
@@ -52,7 +52,7 @@ export function EventModal({
         description: '',
         startDate: selectedDate.toISOString().split('T')[0],
         endDate: '',
-        category: ['geral'],
+        category: 'geral',
         eventType: 'normal'
       });
     } else {
@@ -61,19 +61,14 @@ export function EventModal({
         description: '',
         startDate: new Date().toISOString().split('T')[0],
         endDate: '',
-        category: ['geral'],
+        category: 'geral',
         eventType: 'normal'
       });
     }
   }, [event, selectedDate, isOpen]);
 
-  const handleCategoryChange = (categoryValue: EventCategory) => {
-    setFormData(prev => {
-      const newCategories = prev.category.includes(categoryValue)
-        ? prev.category.filter(c => c !== categoryValue)
-        : [...prev.category, categoryValue];
-      return { ...prev, category: newCategories };
-    });
+  const handleCategoryChange = (value: EventCategory) => {
+    setFormData(prev => ({ ...prev, category: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -86,15 +81,6 @@ export function EventModal({
         variant: "destructive",
       });
       return;
-    }
-
-    if (formData.category.length === 0) {
-        toast({
-            title: "Erro",
-            description: "Selecione ao menos um segmento.",
-            variant: "destructive",
-        });
-        return;
     }
 
     if (onSave) {
@@ -181,25 +167,23 @@ export function EventModal({
           </div>
           
           <div className="space-y-2">
-            <Label>Segmentos</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {eventCategories.map((category) => (
-                <div key={category.value} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={category.value}
-                    checked={formData.category.includes(category.value)}
-                    onCheckedChange={() => handleCategoryChange(category.value)}
-                    disabled={isReadOnly}
-                  />
-                  <label
-                    htmlFor={category.value}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
+            <Label htmlFor="category">Segmento</Label>
+            <Select
+              value={formData.category}
+              onValueChange={handleCategoryChange}
+              disabled={isReadOnly}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um segmento" />
+              </SelectTrigger>
+              <SelectContent>
+                {eventCategories.map((category) => (
+                  <SelectItem key={category.value} value={category.value}>
                     {category.label}
-                  </label>
-                </div>
-              ))}
-            </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
 

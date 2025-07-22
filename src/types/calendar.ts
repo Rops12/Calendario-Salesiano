@@ -3,7 +3,7 @@ export interface EventFormData {
   description: string;
   startDate: string;
   endDate?: string;
-  category: EventCategory[]; // Alterado para array
+  category: EventCategory; // Voltando para single category
   eventType: EventType;
 }
 
@@ -12,7 +12,7 @@ export interface CalendarEvent extends Omit<EventFormData, 'category'> {
   date: string;
   createdAt: string;
   updatedAt: string;
-  category: EventCategory; // Mantido como single para exibição, mas o form usa array
+  category: EventCategory;
 }
 
 export type EventCategory = 'geral' | 'infantil' | 'fundamental1' | 'fundamental2' | 'medio' | 'pastoral' | 'esportes' | 'robotica' | 'biblioteca' | 'nap';

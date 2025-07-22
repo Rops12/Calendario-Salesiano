@@ -57,8 +57,7 @@ export function CalendarGrid({
     return events.filter(event => {
       const eventStartDate = event.startDate.split('T')[0];
       const eventEndDate = event.endDate ? event.endDate.split('T')[0] : eventStartDate;
-      const eventCategory = Array.isArray(event.category) ? event.category[0] : event.category;
-      return dateStr >= eventStartDate && dateStr <= eventEndDate && selectedCategories.includes(eventCategory);
+      return dateStr >= eventStartDate && dateStr <= eventEndDate && selectedCategories.includes(event.category);
     });
   };
 
