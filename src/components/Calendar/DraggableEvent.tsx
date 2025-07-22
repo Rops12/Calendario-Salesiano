@@ -1,5 +1,5 @@
 import { Draggable } from '@hello-pangea/dnd';
-import { CalendarEvent, eventCategories, EventCategory } from '@/types/calendar';
+import { CalendarEvent, eventCategories } from '@/types/calendar';
 import { cn } from '@/lib/utils';
 import { Star } from 'lucide-react';
 
@@ -8,30 +8,15 @@ interface DraggableEventProps {
   index: number;
   onClick: (event: CalendarEvent) => void;
   isDraggable?: boolean;
-  isSpecialDay: boolean;
 }
 
-export function DraggableEvent({ event, index, onClick, isDraggable = true, isSpecialDay }: DraggableEventProps) {
+export function DraggableEvent({ event, index, onClick, isDraggable = true }: DraggableEventProps) {
   
-  const categoryLabel = eventCategories.find(c => c.value === event.category)?.label || event.category;
+  const categoryInfo = eventCategories.find(c => c.value === event.category);
 
   const getEventStyles = () => {
     const baseStyles = "px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 break-words whitespace-normal leading-tight cursor-pointer border-l-4 flex items-start gap-2";
     
-    // Cores baseadas na categoria
-    const categoryStyles = {
-      geral: "bg-blue-50 text-blue-800 border-l-blue-500 hover:bg-blue-100",
-      infantil: "bg-amber-50 text-amber-800 border-l-amber-500 hover:bg-amber-100",
-      fundamental1: "bg-green-50 text-green-800 border-l-green-500 hover:bg-green-100",
-      fundamental2: "bg-cyan-50 text-cyan-800 border-l-cyan-500 hover:bg-cyan-100",
-      medio: "bg-purple-50 text-purple-800 border-l-purple-500 hover:bg-purple-100",
-      pastoral: "bg-pink-50 text-pink-800 border-l-pink-500 hover:bg-pink-100",
-      esportes: "bg-orange-50 text-orange-800 border-l-orange-500 hover:bg-orange-100",
-      robotica: "bg-indigo-50 text-indigo-800 border-l-indigo-500 hover:bg-indigo-100",
-      biblioteca: "bg-emerald-50 text-emerald-800 border-l-emerald-500 hover:bg-emerald-100",
-      nap: "bg-rose-50 text-rose-800 border-l-rose-500 hover:bg-rose-100"
-    };
-
     // Estilos especiais para tipos de evento
     if (event.eventType === 'feriado') {
       return cn(baseStyles, "bg-red-100 text-red-900 border-l-red-500 font-semibold");
@@ -43,7 +28,14 @@ export function DraggableEvent({ event, index, onClick, isDraggable = true, isSp
       return cn(baseStyles, "bg-yellow-100 text-yellow-900 border-l-yellow-500 font-semibold");
     }
 
-    return cn(baseStyles, categoryStyles[event.category] || categoryStyles.geral);
+    // Estilos padrão de categoria
+    if (categoryInfo) {
+      const { background, foreground, border, hoverBackground } = categoryInfo.tw;
+      return cn(baseStyles, background, foreground, border, hoverBackground);
+    }
+    
+    // Fallback
+    return cn(baseStyles, "bg-gray-100 text-gray-800 border-l-gray-500 hover:bg-gray-200");
   };
 
   return (
@@ -65,13 +57,8 @@ export function DraggableEvent({ event, index, onClick, isDraggable = true, isSp
           }}
         >
           {event.eventType === 'evento' && <Star className="w-3 h-3 mt-0.5 text-yellow-600 flex-shrink-0" />}
-          <div className="flex flex-col gap-1 flex-grow">
-            <div className="font-bold text-xs leading-tight">
-              {event.title}
-            </div>
-            <div className="text-xs opacity-75 leading-tight">
-              {categoryLabel}
-            </div>
+          <div className="flex-grow font-bold leading-tight">
+            {event.title}
           </div>
         </div>
       )}
