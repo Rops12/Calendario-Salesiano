@@ -4,8 +4,6 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, getYear, g
 import { ptBR } from 'date-fns/locale';
 import { CalendarEvent, EventCategory, eventCategories } from '@/types/calendar';
 
-// Remova a declaração de módulo daqui, pois não é mais necessária com a importação explícita.
-
 const getCategoryData = (category: EventCategory) => {
   return eventCategories.find(cat => cat.value === category);
 };
