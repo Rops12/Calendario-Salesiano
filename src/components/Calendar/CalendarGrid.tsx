@@ -69,18 +69,15 @@ export function CalendarGrid({
     return null;
   };
 
-  const getDayBackgroundStyles = (eventType: string | null) => {
-    // Usando cores mais suaves (opacidade de 5%)
-    switch (eventType) {
-      case 'feriado':
-        return 'bg-destructive/5';
-      case 'recesso':
-        return 'bg-category-esportes/5'; // Laranja suave
-      case 'evento':
-        return 'bg-category-fundamental1/5'; // Verde suave
-      default:
-        return '';
-    }
+  const getDayCardStyles = (date: Date, eventType: string | null) => {
+    if (eventType === 'feriado') return 'bg-event-type-feriado text-white';
+    if (eventType === 'recesso') return 'bg-event-type-recesso text-white';
+    if (eventType === 'evento') return 'bg-event-type-evento text-white';
+    
+    if (isToday(date)) return 'bg-primary/10 ring-2 ring-primary/40';
+    if (!isCurrentMonth(date)) return 'bg-muted/40 text-muted-foreground/70';
+
+    return 'bg-card-day'; // Cor para dias normais
   };
   
   const handleDragEnd = (result: DropResult) => {
@@ -124,17 +121,18 @@ export function CalendarGrid({
                       ref={provided.innerRef}
                       {...provided.droppableProps}
                       className={cn(
-                        "group relative min-h-[120px] p-3 rounded-lg bg-card shadow-soft cursor-pointer transition-all duration-200 hover:shadow-strong hover:-translate-y-1",
-                        !isCurrentMonth(date) && "bg-muted/40 text-muted-foreground/70",
-                        !specialEventType && isToday(date) && "bg-primary/10 ring-2 ring-primary/40",
-                        specialEventType && getDayBackgroundStyles(specialEventType),
+                        "group relative min-h-[120px] p-3 rounded-xl shadow-soft cursor-pointer transition-all duration-200 hover:shadow-strong hover:-translate-y-1",
+                        getDayCardStyles(date, specialEventType)
                       )}
                       onClick={() => onDateClick(date)}
                     >
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute top-1 right-1 h-7 w-7 rounded-full opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
+                        className={cn(
+                          "absolute top-1 right-1 h-7 w-7 rounded-full opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100",
+                          specialEventType && "text-white hover:bg-white/20"
+                        )}
                         onClick={(e) => {
                           e.stopPropagation();
                           onAddNewEvent(date);
@@ -148,7 +146,8 @@ export function CalendarGrid({
                         "flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold mb-3 transition-all duration-200",
                         isToday(date) && "bg-primary text-primary-foreground",
                         !isToday(date) && isCurrentMonth(date) && "text-foreground",
-                        !isCurrentMonth(date) && "text-muted-foreground/50"
+                        !isCurrentMonth(date) && "text-muted-foreground/50",
+                        specialEventType && "bg-white/20"
                       )}>
                         {date.getDate()}
                       </div>
@@ -161,11 +160,15 @@ export function CalendarGrid({
                             index={eventIndex}
                             onClick={onEventClick}
                             isDraggable={!!onEventDrop}
+                            isSpecialDay={!!specialEventType}
                           />
                         ))}
                         
                         {dayEvents.length > 2 && (
-                          <div className="text-xs text-muted-foreground px-2 py-1 rounded-full bg-muted/50 border border-border/30 hover:bg-muted/70 transition-colors">
+                          <div className={cn(
+                            "text-xs px-2 py-1 rounded-lg hover:bg-black/10 transition-colors",
+                            specialEventType ? "bg-white/20" : "bg-muted/50"
+                          )}>
                             +{dayEvents.length - 2} mais
                           </div>
                         )}
