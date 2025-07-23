@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/Auth/ProtectedRoute";
 import { CategoriesProvider } from "@/hooks/useCategories.tsx";
-import { AuthProvider } from "@/hooks/useAuth"; // Importa o novo AuthProvider
+import { AuthProvider } from "@/hooks/useAuth.tsx"; // CORREÇÃO AQUI
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -18,7 +18,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <AuthProvider> {/* Adiciona o AuthProvider envolvendo os outros */}
+      <AuthProvider>
         <CategoriesProvider>
           <BrowserRouter>
             <Routes>
