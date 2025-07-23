@@ -1,3 +1,4 @@
+// src/components/Calendar/EventModal.tsx
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarEvent, EventFormData, eventCategories, EventType, EventCategory } from '@/types/calendar';
+import { CalendarEvent, EventFormData, EventType, EventCategory } from '@/types/calendar';
+import { CategoryConfig } from '@/types/admin'; // Importado
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -17,6 +19,7 @@ interface EventModalProps {
   onDelete?: (id: string) => void;
   event?: CalendarEvent | null;
   selectedDate?: Date;
+  categories: CategoryConfig[]; // Propriedade adicionada
 }
 
 const eventTypeOptions: { value: EventType, label: string, description: string }[] = [
@@ -32,7 +35,8 @@ export function EventModal({
   onSave, 
   onDelete, 
   event, 
-  selectedDate 
+  selectedDate,
+  categories // Propriedade recebida
 }: EventModalProps) {
   const { toast } = useToast();
   const [formData, setFormData] = useState<EventFormData>({
@@ -40,11 +44,12 @@ export function EventModal({
     description: '',
     startDate: '',
     endDate: '',
-    category: 'geral',
+    category: categories[0]?.value || '',
     eventType: 'normal'
   });
 
   useEffect(() => {
+    const defaultCategory = categories[0]?.value || '';
     if (event) {
       setFormData({
         title: event.title,
@@ -60,7 +65,7 @@ export function EventModal({
         description: '',
         startDate: selectedDate.toISOString().split('T')[0],
         endDate: '',
-        category: 'geral',
+        category: defaultCategory,
         eventType: 'normal'
       });
     } else {
@@ -69,11 +74,11 @@ export function EventModal({
         description: '',
         startDate: new Date().toISOString().split('T')[0],
         endDate: '',
-        category: 'geral',
+        category: defaultCategory,
         eventType: 'normal'
       });
     }
-  }, [event, selectedDate, isOpen]);
+  }, [event, selectedDate, isOpen, categories]);
 
   const handleCategoryChange = (value: EventCategory) => {
     setFormData(prev => ({ ...prev, category: value }));
@@ -81,24 +86,14 @@ export function EventModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!formData.title.trim()) {
-      toast({
-        title: "Erro",
-        description: "O título do evento é obrigatório.",
-        variant: "destructive",
-      });
+      toast({ title: "Erro", description: "O título do evento é obrigatório.", variant: "destructive" });
       return;
     }
-
     if (onSave) {
       onSave(formData);
       onClose();
-      
-      toast({
-        title: event ? "Evento atualizado" : "Evento criado",
-        description: event ? "O evento foi atualizado com sucesso." : "O evento foi criado com sucesso.",
-      });
+      toast({ title: event ? "Evento atualizado" : "Evento criado", description: event ? "O evento foi atualizado com sucesso." : "O evento foi criado com sucesso." });
     }
   };
 
@@ -108,11 +103,7 @@ export function EventModal({
     if (event && onDelete) {
       onDelete(event.id);
       onClose();
-      
-      toast({
-        title: "Evento excluído",
-        description: "O evento foi excluído com sucesso.",
-      });
+      toast({ title: "Evento excluído", description: "O evento foi excluído com sucesso." });
     }
   };
   
@@ -124,74 +115,38 @@ export function EventModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>
-            {isReadOnly ? 'Visualizar Evento' : (event ? 'Editar Evento' : 'Novo Evento')}
-          </DialogTitle>
+          <DialogTitle>{isReadOnly ? 'Visualizar Evento' : (event ? 'Editar Evento' : 'Novo Evento')}</DialogTitle>
         </DialogHeader>
-
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* ... campos de título, descrição, datas ... */}
           <div className="space-y-2">
             <Label htmlFor="title">Título</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="Digite o título do evento"
-              required
-              disabled={isReadOnly}
-            />
+            <Input id="title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Digite o título do evento" required disabled={isReadOnly} />
           </div>
-
           <div className="space-y-2">
             <Label htmlFor="description">Descrição</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Digite a descrição do evento (opcional)"
-              rows={3}
-              disabled={isReadOnly}
-            />
+            <Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Digite a descrição do evento (opcional)" rows={3} disabled={isReadOnly} />
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="startDate">Data de Início</Label>
-              <Input
-                id="startDate"
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                required
-                disabled={isReadOnly}
-              />
+              <Input id="startDate" type="date" value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} required disabled={isReadOnly} />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="endDate">Data de Fim (opcional)</Label>
-              <Input
-                id="endDate"
-                type="date"
-                value={formData.endDate}
-                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                min={formData.startDate}
-                disabled={isReadOnly}
-              />
+              <Input id="endDate" type="date" value={formData.endDate} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} min={formData.startDate} disabled={isReadOnly} />
             </div>
           </div>
           
           <div className="space-y-2">
             <Label htmlFor="category">Segmento</Label>
-            <Select
-              value={formData.category}
-              onValueChange={handleCategoryChange}
-              disabled={isReadOnly}
-            >
+            <Select value={formData.category} onValueChange={handleCategoryChange} disabled={isReadOnly}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione um segmento" />
               </SelectTrigger>
               <SelectContent>
-                {eventCategories.map((category) => (
+                {/* O select agora usa as categorias dinâmicas */}
+                {categories.map((category) => (
                   <SelectItem key={category.value} value={category.value}>
                     {category.label}
                   </SelectItem>
@@ -199,25 +154,11 @@ export function EventModal({
               </SelectContent>
             </Select>
           </div>
-
           <div className="space-y-3">
             <Label>Tipo de Ocasião</Label>
-            <RadioGroup 
-              value={formData.eventType} 
-              onValueChange={handleEventTypeChange}
-              className="space-y-2"
-              disabled={isReadOnly}
-            >
+            <RadioGroup value={formData.eventType} onValueChange={handleEventTypeChange} className="space-y-2" disabled={isReadOnly}>
               {eventTypeOptions.map(option => (
-                <Label 
-                  key={option.value} 
-                  className={cn(
-                    "flex items-center gap-4 p-3 rounded-lg border transition-all cursor-pointer",
-                    formData.eventType === option.value 
-                      ? "bg-muted border-primary ring-2 ring-primary/50"
-                      : "hover:bg-muted/50"
-                  )}
-                >
+                <Label key={option.value} className={cn("flex items-center gap-4 p-3 rounded-lg border transition-all cursor-pointer", formData.eventType === option.value ? "bg-muted border-primary ring-2 ring-primary/50" : "hover:bg-muted/50")}>
                   <RadioGroupItem value={option.value} />
                   <div>
                     <p className="font-medium">{option.label}</p>
@@ -227,29 +168,13 @@ export function EventModal({
               ))}
             </RadioGroup>
           </div>
-
           <div className="flex justify-between pt-4">
             <div>
-              {!isReadOnly && event && onDelete && (
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={handleDelete}
-                >
-                  Excluir
-                </Button>
-              )}
+              {!isReadOnly && event && onDelete && (<Button type="button" variant="destructive" onClick={handleDelete}>Excluir</Button>)}
             </div>
-
             <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={onClose}>
-                {isReadOnly ? 'Fechar' : 'Cancelar'}
-              </Button>
-              {!isReadOnly && onSave && (
-                <Button type="submit">
-                  {event ? 'Atualizar' : 'Criar'}
-                </Button>
-              )}
+              <Button type="button" variant="outline" onClick={onClose}>{isReadOnly ? 'Fechar' : 'Cancelar'}</Button>
+              {!isReadOnly && onSave && (<Button type="submit">{event ? 'Atualizar' : 'Criar'}</Button>)}
             </div>
           </div>
         </form>
