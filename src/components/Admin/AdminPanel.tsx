@@ -1,12 +1,12 @@
 // src/components/Admin/AdminPanel.tsx
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAdmin } from "@/hooks/useAdmin.ts";
-import { useCategories } from "@/hooks/useCategories.tsx";
-// CORREÇÃO: Adicionado o caminho completo e a extensão do arquivo
-import { CategoriesManagement } from "./CategoriesManagement.tsx";
-import { UsersManagement } from "./UsersManagement.tsx";
-import { ActivityLogList } from "./ActivityLogList.tsx";
+import { useAdmin } from "@/hooks/useAdmin";
+import { useCategories } from "@/hooks/useCategories";
+// CORREÇÃO: O nome do arquivo é 'CategoryManagement' (singular)
+import { CategoryManagement } from "./CategoryManagement"; 
+import { UsersManagement } from "./UsersManagement";
+import { ActivityLogList } from "./ActivityLogList";
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -38,7 +38,7 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
         <div className="flex flex-col h-full">
           <SheetHeader className="p-6">
             <SheetTitle>Painel Administrativo</SheetTitle>
-            <SheetDescription>Gerencie usuários, categorias e veja os logs de atividade do sistema.</SheetDescription>
+            <SheetDescription>Gerencie usuários, segmentos e veja os logs de atividade do sistema.</SheetDescription>
           </SheetHeader>
           <Tabs defaultValue="categories" className="flex-grow flex flex-col">
             <div className="px-6">
@@ -49,7 +49,8 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
               </TabsList>
             </div>
             <TabsContent value="categories" className="flex-grow p-6 overflow-auto">
-              <CategoriesManagement
+              {/* O nome do componente também é no singular */}
+              <CategoryManagement
                 categories={categories}
                 onAddCategory={handleAddCategory}
                 onUpdateCategory={handleUpdateCategory}
