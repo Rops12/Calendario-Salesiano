@@ -21,12 +21,12 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Plus, Star } from 'lucide-react';
-import { useCategories } from '@/hooks/useCategories'; // Importado
+import { useCategories } from '@/hooks/useCategories.ts'; // CORREÇÃO AQUI
 
 const Index = () => {
   const navigate = useNavigate();
   const params = useParams();
-  const { categories, getCategory } = useCategories(); // Usando o novo hook
+  const { categories, getCategory } = useCategories();
 
   const [currentDate, setCurrentDate] = useState(() => {
     const dateParam = params.date;
@@ -49,17 +49,14 @@ const Index = () => {
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   
-  // Atualiza as categorias selecionadas quando as categorias do banco de dados são carregadas
   useEffect(() => {
     if (categories.length > 0) {
       const saved = localStorage.getItem('selectedCategories');
       if (saved) {
-        // Garante que apenas categorias existentes e ativas sejam carregadas
         const savedParsed = JSON.parse(saved);
         const activeCategoryValues = categories.filter(c => c.isActive).map(c => c.value);
         setSelectedCategories(savedParsed.filter((val: string) => activeCategoryValues.includes(val)));
       } else {
-        // Seleciona todas as ativas por padrão
         setSelectedCategories(categories.filter(c => c.isActive).map(c => c.value));
       }
     }
@@ -297,7 +294,7 @@ const Index = () => {
         onSave={canEdit ? handleSaveEvent : undefined}
         onDelete={canEdit ? handleDeleteEvent : undefined}
         event={selectedEvent} selectedDate={selectedDate}
-        categories={categories.filter(c => c.isActive)} // Passando apenas categorias ativas para o modal
+        categories={categories.filter(c => c.isActive)}
       />
       <AdminPanel isOpen={isAdminPanelOpen} onClose={() => setIsAdminPanelOpen(false)} />
     </div>
