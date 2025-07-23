@@ -3,10 +3,10 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useCategories } from "@/hooks/useCategories";
-// CORREÇÃO: O nome do arquivo é 'CategoryManagement' (singular)
-import { CategoryManagement } from "./CategoryManagement"; 
-import { UsersManagement } from "./UsersManagement";
-import { ActivityLogList } from "./ActivityLogList";
+// CORREÇÃO: Adicionando as extensões .tsx de volta
+import { CategoryManagement } from "./CategoryManagement.tsx";
+import { UsersManagement } from "./UsersManagement.tsx";
+import { ActivityLogList } from "./ActivityLogList.tsx";
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -49,7 +49,6 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
               </TabsList>
             </div>
             <TabsContent value="categories" className="flex-grow p-6 overflow-auto">
-              {/* O nome do componente também é no singular */}
               <CategoryManagement
                 categories={categories}
                 onAddCategory={handleAddCategory}
