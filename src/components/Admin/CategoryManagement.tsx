@@ -1,10 +1,11 @@
 // src/components/Admin/CategoryManagement.tsx
 import { useState } from 'react';
-import { Plus, Edit, Trash2, Save, X, Palette } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch'; // Importado
 import {
   Table,
   TableBody,
@@ -66,6 +67,11 @@ const CategoryForm = ({
 
   const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const label = e.target.value;
+    // Não atualiza mais o 'value' se estiver editando
+    if (category) {
+      setFormData(prev => ({...prev, label}));
+      return;
+    }
     const value = label
       .toLowerCase()
       .normalize('NFD')
@@ -145,9 +151,10 @@ export const CategoryManagement = () => {
     setIsFormOpen(true);
   };
 
-  const handleSave = (data: Omit<CategoryConfig, 'isActive'>) => {
+  const handleSave = (data: Omit<CategoryConfig, 'isActive' | 'value'> & {value: string}) => {
     if (editingCategory) {
-      updateCategory(editingCategory.value, data);
+      // Passa o ID original e os dados atualizados
+      updateCategory(editingCategory.value, { label: data.label, color: data.color });
     } else {
       addCategory(data);
     }
@@ -157,6 +164,10 @@ export const CategoryManagement = () => {
 
   const handleDelete = (value: string) => {
     deleteCategory(value);
+  };
+  
+  const handleStatusChange = (category: CategoryConfig, newStatus: boolean) => {
+    updateCategory(category.value, { isActive: newStatus });
   };
 
   return (
@@ -214,9 +225,17 @@ export const CategoryManagement = () => {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={category.isActive ? 'default' : 'secondary'}>
-                    {category.isActive ? 'Ativo' : 'Inativo'}
-                  </Badge>
+                  {/* MELHORIA APLICADA AQUI */}
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={category.isActive}
+                      onCheckedChange={(newStatus) => handleStatusChange(category, newStatus)}
+                      aria-label="Status da categoria"
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {category.isActive ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-2 justify-end">
