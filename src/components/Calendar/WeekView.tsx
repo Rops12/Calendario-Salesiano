@@ -1,13 +1,13 @@
 import { CalendarEvent, EventCategory } from '@/types/calendar';
 import { cn } from '@/lib/utils';
-import { DraggableEvent } from './DraggableEvent';
+import { EventCard } from './EventCard'; // Usando o novo componente simples
 
 interface WeekViewProps {
   currentDate: Date;
   events: CalendarEvent[];
   selectedCategories: EventCategory[];
   onEventClick: (event: CalendarEvent) => void;
-  onDateClick?: (date: Date) => void; // Tornando opcional para consistência
+  onDateClick?: (date: Date) => void;
 }
 
 export function WeekView({ 
@@ -40,21 +40,19 @@ export function WeekView({
       const eventEndDate = event.endDate ? event.endDate.split('T')[0] : eventStartDate;
       
       return dateStr >= eventStartDate && dateStr <= eventEndDate && selectedCategories.includes(event.category);
-    });
+    }).sort((a, b) => a.title.localeCompare(b.title));
   };
 
-  // CORREÇÃO: Adicionando a lógica para identificar dias especiais
-  const getSpecialEventType = (date: Date): 'feriado' | 'recesso' | 'evento' | null => {
+  const getSpecialEventType = (date: Date): 'feriado' | 'recesso' | null => {
     const dayEvents = getEventsForDate(date);
     if (dayEvents.some(e => e.eventType === 'feriado')) return 'feriado';
     if (dayEvents.some(e => e.eventType === 'recesso')) return 'recesso';
-    if (dayEvents.some(e => e.eventType === 'evento')) return 'evento';
     return null;
   };
 
-  // ATUALIZAÇÃO: Aplicando estilos consistentes com a visualização mensal
-  const getDayCardStyles = (date: Date, eventType: string | null) => {
+  const getDayCardStyles = (date: Date) => {
     const baseStyles = "group relative min-h-[400px] p-3 rounded-xl transition-all duration-200 hover:shadow-lg hover:-translate-y-1 border flex flex-col";
+    const specialEventType = getSpecialEventType(date);
     
     if (onDateClick) {
       baseStyles.concat(" cursor-pointer");
@@ -64,11 +62,10 @@ export function WeekView({
       return cn(baseStyles, "bg-blue-50 border-blue-200 shadow-blue-100");
     }
     
-    // Destaques para Feriados e Recessos
-    if (eventType === 'feriado') {
+    if (specialEventType === 'feriado') {
       return cn(baseStyles, "bg-red-50 border-red-200");
     }
-    if (eventType === 'recesso') {
+    if (specialEventType === 'recesso') {
       return cn(baseStyles, "bg-orange-50 border-orange-200");
     }
     
@@ -80,15 +77,13 @@ export function WeekView({
       <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
         {weekDays.map((day, dayIndex) => {
           const dayEvents = getEventsForDate(day);
-          const specialEventType = getSpecialEventType(day); // CORREÇÃO: Calculando o tipo de dia
           
           return (
             <div 
               key={dayIndex} 
-              className={getDayCardStyles(day, specialEventType)}
+              className={getDayCardStyles(day)}
               onClick={onDateClick ? () => onDateClick(day) : undefined}
             >
-              {/* Cabeçalho do Card do Dia */}
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-sm font-semibold text-gray-500">{daysOfWeek[dayIndex]}</span>
                 <div className={cn(
@@ -99,17 +94,12 @@ export function WeekView({
                 </div>
               </div>
 
-              {/* Lista de Eventos */}
               <div className="space-y-1 flex-grow overflow-y-auto">
-                {dayEvents.map((event, eventIndex) => (
-                  <DraggableEvent
+                {dayEvents.map((event) => (
+                  <EventCard
                     key={event.id}
                     event={event}
-                    index={eventIndex}
                     onClick={onEventClick}
-                    isDraggable={false}
-                    // CORREÇÃO: Passando a propriedade que faltava
-                    isSpecialDay={!!specialEventType}
                   />
                 ))}
               </div>
