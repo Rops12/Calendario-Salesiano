@@ -3,9 +3,9 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useCategories } from "@/hooks/useCategories";
-// CORREÇÃO: Adicionando as extensões .tsx de volta
+// CORREÇÃO FINAL: Corrigido o nome de 'UsersManagement' para 'UserManagement' (singular)
 import { CategoryManagement } from "./CategoryManagement.tsx";
-import { UsersManagement } from "./UsersManagement.tsx";
+import { UserManagement } from "./UserManagement.tsx"; 
 import { ActivityLogList } from "./ActivityLogList.tsx";
 
 interface AdminPanelProps {
@@ -58,7 +58,8 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
               />
             </TabsContent>
             <TabsContent value="users" className="flex-grow p-6 overflow-auto">
-              <UsersManagement users={users} isLoading={isLoading} />
+              {/* Nome do componente corrigido para o singular */}
+              <UserManagement users={users} isLoading={isLoading} />
             </TabsContent>
             <TabsContent value="activity" className="flex-grow p-6 overflow-auto">
               <ActivityLogList logs={activityLogs} isLoading={isLoading} />
