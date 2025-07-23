@@ -11,34 +11,28 @@ interface EventCardProps {
 }
 
 export function EventCard({ event, onClick, className }: EventCardProps) {
-  const { getCategory } = useCategories(); // Usando o hook
+  const { getCategory } = useCategories();
   const categoryInfo = getCategory(event.category);
+
+  // Lógica de Fallback: Se a categoria não for encontrada, usa um padrão.
+  const safeCategoryInfo = categoryInfo || {
+    label: event.category.charAt(0).toUpperCase() + event.category.slice(1), // Ex: 'geral' -> 'Geral'
+    color: '#9ca3af', // Cinza neutro
+  };
 
   const getEventStyles = () => {
     const baseStyles = "px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 break-words whitespace-normal leading-tight cursor-pointer border-l-4 flex items-start gap-2";
     
-    // Estilos especiais para tipos de evento
-    if (event.eventType === 'feriado') {
-      return cn(baseStyles, "bg-red-100 text-red-900 border-l-red-500 font-semibold hover:bg-red-200");
-    }
-    if (event.eventType === 'recesso') {
-      return cn(baseStyles, "bg-orange-100 text-orange-900 border-l-orange-500 font-semibold hover:bg-orange-200");
-    }
-    if (event.eventType === 'evento') {
-      return cn(baseStyles, "bg-yellow-100 text-yellow-900 border-l-yellow-500 font-semibold hover:bg-yellow-200");
-    }
+    if (event.eventType === 'feriado') return cn(baseStyles, "bg-red-100 text-red-900 border-l-red-500 font-semibold hover:bg-red-200");
+    if (event.eventType === 'recesso') return cn(baseStyles, "bg-orange-100 text-orange-900 border-l-orange-500 font-semibold hover:bg-orange-200");
+    if (event.eventType === 'evento') return cn(baseStyles, "bg-yellow-100 text-yellow-900 border-l-yellow-500 font-semibold hover:bg-yellow-200");
 
-    // Estilos dinâmicos baseados na cor da categoria do DB
-    if (categoryInfo) {
-      return cn(baseStyles, "text-white hover:opacity-90");
-    }
-    
-    // Fallback
-    return cn(baseStyles, "bg-gray-100 text-gray-800 border-l-gray-500 hover:bg-gray-200");
+    // Estilo padrão usa a cor da categoria vinda do banco de dados
+    return cn(baseStyles, "text-white hover:opacity-90");
   };
   
-  const cardStyle = categoryInfo && event.eventType === 'normal'
-    ? { backgroundColor: categoryInfo.color, borderColor: categoryInfo.color }
+  const cardStyle = event.eventType === 'normal'
+    ? { backgroundColor: safeCategoryInfo.color, borderColor: safeCategoryInfo.color }
     : {};
 
   return (
@@ -55,11 +49,9 @@ export function EventCard({ event, onClick, className }: EventCardProps) {
         <div className="font-bold text-xs leading-tight">
           {event.title}
         </div>
-        {categoryInfo && (
-          <div className="text-xs opacity-75 leading-tight">
-            {categoryInfo.label}
-          </div>
-        )}
+        <div className="text-xs opacity-75 leading-tight">
+          {safeCategoryInfo.label}
+        </div>
       </div>
     </div>
   );
