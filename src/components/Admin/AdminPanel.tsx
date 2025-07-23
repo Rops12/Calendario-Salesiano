@@ -1,13 +1,11 @@
-import { useState } from 'react';
-import { Settings, Users, Palette, Activity, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { UserManagement } from './UserManagement';
-import { CategoryManagement } from './CategoryManagement';
-import { ActivityLogs } from './ActivityLogs';
-import { useAdmin } from '@/hooks/useAdmin';
+// src/components/Admin/AdminPanel.tsx
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAdmin } from "@/hooks/useAdmin.ts";
+import { useCategories } from "@/hooks/useCategories.tsx"; // Importa o hook de categorias
+import { CategoriesManagement } from "./CategoriesManagement";
+import { UsersManagement } from "./UsersManagement";
+import { ActivityLogList } from "./ActivityLogList";
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -15,71 +13,60 @@ interface AdminPanelProps {
 }
 
 export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
-  const [activeTab, setActiveTab] = useState('categories');
-  const { isAdmin } = useAdmin();
+  const { users, activityLogs, currentUser, isLoading, addCategory, updateCategory, deleteCategory } = useAdmin();
+  // Usa o estado global de categorias e a função de recarregar
+  const { categories, refetchCategories } = useCategories();
 
-  if (!isAdmin) return null;
+  // Envolve as funções de modificação para chamar refetchCategories
+  const handleUpdateCategory = async (...args: Parameters<typeof updateCategory>) => {
+    await updateCategory(...args);
+    await refetchCategories();
+  };
+
+  const handleAddCategory = async (...args: Parameters<typeof addCategory>) => {
+    await addCategory(...args);
+    await refetchCategories();
+  };
+
+  const handleDeleteCategory = async (...args: Parameters<typeof deleteCategory>) => {
+    await deleteCategory(...args);
+    await refetchCategories();
+  };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Painel de Configuração
-          </DialogTitle>
-        </DialogHeader>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="categories" className="flex items-center gap-2">
-              <Palette className="h-4 w-4" />
-              Categorias
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Usuários
-            </TabsTrigger>
-            <TabsTrigger value="logs" className="flex items-center gap-2">
-              <Activity className="h-4 w-4" />
-              Logs
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="categories" className="space-y-4 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Gerenciar Categorias</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CategoryManagement />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="users" className="space-y-4 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Gerenciar Usuários</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <UserManagement />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="logs" className="space-y-4 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Log de Atividades</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ActivityLogs />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </DialogContent>
-    </Dialog>
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent className="w-full sm:max-w-2xl lg:max-w-4xl p-0">
+        <div className="flex flex-col h-full">
+          <SheetHeader className="p-6">
+            <SheetTitle>Painel Administrativo</SheetTitle>
+            <SheetDescription>Gerencie usuários, categorias e veja os logs de atividade do sistema.</SheetDescription>
+          </SheetHeader>
+          <Tabs defaultValue="categories" className="flex-grow flex flex-col">
+            <div className="px-6">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="categories">Segmentos</TabsTrigger>
+                <TabsTrigger value="users">Usuários</TabsTrigger>
+                <TabsTrigger value="activity">Logs</TabsTrigger>
+              </TabsList>
+            </div>
+            <TabsContent value="categories" className="flex-grow p-6 overflow-auto">
+              <CategoriesManagement
+                categories={categories} // Passa as categorias do estado global
+                onAddCategory={handleAddCategory}
+                onUpdateCategory={handleUpdateCategory}
+                onDeleteCategory={handleDeleteCategory}
+                isLoading={isLoading}
+              />
+            </TabsContent>
+            <TabsContent value="users" className="flex-grow p-6 overflow-auto">
+              <UsersManagement users={users} isLoading={isLoading} />
+            </TabsContent>
+            <TabsContent value="activity" className="flex-grow p-6 overflow-auto">
+              <ActivityLogList logs={activityLogs} isLoading={isLoading} />
+            </TabsContent>
+          </Tabs>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 };
