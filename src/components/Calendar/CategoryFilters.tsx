@@ -1,7 +1,7 @@
 // src/components/Calendar/CategoryFilters.tsx
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { useCategories } from '@/hooks/useCategories';
+import { useCategories } from '@/hooks/useCategories.ts'; // CORREÇÃO AQUI
 import { Check } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -13,7 +13,6 @@ interface CategoryFiltersProps {
 export function CategoryFilters({ selectedCategories, onToggleCategory }: CategoryFiltersProps) {
   const { categories, isLoading } = useCategories();
   
-  // Mostra apenas categorias ativas no filtro
   const activeCategories = categories.filter(cat => cat.isActive);
 
   return (
