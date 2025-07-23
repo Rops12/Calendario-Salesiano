@@ -16,7 +16,7 @@ export function EventCard({ event, onClick, className }: EventCardProps) {
 
   // Lógica de Fallback: Se a categoria não for encontrada, usa um padrão.
   const safeCategoryInfo = categoryInfo || {
-    label: event.category.charAt(0).toUpperCase() + event.category.slice(1), // Ex: 'geral' -> 'Geral'
+    label: event.category.charAt(0).toUpperCase() + event.category.slice(1),
     color: '#9ca3af', // Cinza neutro
   };
 
