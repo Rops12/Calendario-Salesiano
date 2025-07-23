@@ -21,7 +21,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Plus, Star } from 'lucide-react';
-import { useCategories } from '@/hooks/useCategories.tsx'; // CORREÇÃO AQUI
+import { useCategories } from '@/hooks/useCategories.tsx';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -244,7 +244,8 @@ const Index = () => {
           </SheetHeader>
           <div className="py-4 space-y-3">
             {daySheetEvents.length > 0 ? daySheetEvents.map(event => {
-                const categoryData = getCategory(event.category);
+                // CORREÇÃO APLICADA AQUI (Fallback)
+                const categoryData = getCategory(event.category) || { label: event.category, color: '#9ca3af' };
                 return (
                     <div key={event.id} onClick={() => { handleEventClick(event); setIsDaySheetOpen(false); }}
                         className={cn("p-4 rounded-lg border cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-medium", getEventTypeStyles(event))}>
@@ -253,14 +254,12 @@ const Index = () => {
                             <div className="flex-1 min-w-0">
                                 <h4 className="font-medium text-foreground mb-1 break-words whitespace-normal leading-tight">{event.title}</h4>
                                 {event.description && (<p className="text-sm text-muted-foreground break-words whitespace-normal leading-tight mb-2">{event.description}</p>)}
-                                {categoryData && (
-                                  <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2">
                                     <span className={cn('inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-muted text-muted-foreground')}>
                                       <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: categoryData.color }} />
                                       {categoryData.label}
                                     </span>
-                                  </div>
-                                )}
+                                </div>
                             </div>
                         </div>
                     </div>
