@@ -14,7 +14,7 @@ import { CalendarView } from '@/components/Calendar/ViewSwitcher';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import { useAdmin } from '@/hooks/useAdmin';
 import { CalendarEvent, EventFormData } from '@/types/calendar';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast.tsx';
 import { CalendarSkeleton } from '@/components/Calendar/CalendarSkeleton';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -202,7 +202,8 @@ const Index = () => {
     
   const renderView = () => {
     if (isInitialLoad) return <CalendarSkeleton />;
-    const viewProps = { currentDate, events: filteredEvents, selectedCategories, onEventClick };
+    // CORREÇÃO AQUI
+    const viewProps = { currentDate, events: filteredEvents, selectedCategories, onEventClick: handleEventClick };
     switch (currentView) {
       case 'month': return <CalendarGrid {...viewProps} onDateClick={handleDateClickForSheet} onAddNewEvent={handleNewEvent} onEventDrop={canEdit ? handleEventDrop : undefined} />;
       case 'week': return <WeekView {...viewProps} onDateClick={canEdit ? handleDateClickForSheet : undefined} />;
@@ -244,7 +245,6 @@ const Index = () => {
           </SheetHeader>
           <div className="py-4 space-y-3">
             {daySheetEvents.length > 0 ? daySheetEvents.map(event => {
-                // CORREÇÃO APLICADA AQUI (Fallback)
                 const categoryData = getCategory(event.category) || { label: event.category, color: '#9ca3af' };
                 return (
                     <div key={event.id} onClick={() => { handleEventClick(event); setIsDaySheetOpen(false); }}
