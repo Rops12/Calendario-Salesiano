@@ -1,40 +1,15 @@
 import { CalendarEvent, EventCategory, eventCategories } from '@/types/calendar';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { DraggableEvent } from './DraggableEvent';
 
 interface WeekViewProps {
   currentDate: Date;
   events: CalendarEvent[];
   selectedCategories: EventCategory[];
   onEventClick: (event: CalendarEvent) => void;
-  onDateClick?: (date: Date) => void;
+  onDateClick: (date: Date) => void;
 }
-
-// Função de estilo unificada, inspirada no DraggableEvent
-const getEventStyles = (event: CalendarEvent) => {
-    const baseStyles = "px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 break-words whitespace-normal leading-tight cursor-pointer border-l-4";
-    
-    const categoryStyles = {
-      geral: "bg-blue-50 text-blue-800 border-l-blue-500 hover:bg-blue-100",
-      infantil: "bg-amber-50 text-amber-800 border-l-amber-500 hover:bg-amber-100",
-      fundamental1: "bg-green-50 text-green-800 border-l-green-500 hover:bg-green-100",
-      fundamental2: "bg-cyan-50 text-cyan-800 border-l-cyan-500 hover:bg-cyan-100",
-      medio: "bg-purple-50 text-purple-800 border-l-purple-500 hover:bg-purple-100",
-      pastoral: "bg-pink-50 text-pink-800 border-l-pink-500 hover:bg-pink-100",
-      esportes: "bg-orange-50 text-orange-800 border-l-orange-500 hover:bg-orange-100",
-      robotica: "bg-indigo-50 text-indigo-800 border-l-indigo-500 hover:bg-indigo-100",
-      biblioteca: "bg-emerald-50 text-emerald-800 border-l-emerald-500 hover:bg-emerald-100",
-      nap: "bg-rose-50 text-rose-800 border-l-rose-500 hover:bg-rose-100"
-    };
-
-    if (event.eventType === 'feriado') {
-      return cn(baseStyles, "bg-red-100 text-red-800 border-l-red-500 font-bold");
-    }
-    if (event.eventType === 'recesso') {
-      return cn(baseStyles, "bg-orange-100 text-orange-800 border-l-orange-500 font-bold");
-    }
-
-    return cn(baseStyles, categoryStyles[event.category] || categoryStyles.geral);
-};
 
 export function WeekView({ 
   currentDate, 
@@ -69,79 +44,54 @@ export function WeekView({
     });
   };
 
-  return (
-    <div className="bg-card shadow-soft animate-fade-in">
-      <div className="">
-        {/* Week Header */}
-        <div className="grid grid-cols-7 border-b">
-          {weekDays.map((day, index) => (
-            <div 
-              key={index}
-              className={cn(
-                "p-4 text-center border-r bg-muted/50 cursor-pointer hover:bg-muted transition-colors",
-                isToday(day) && "bg-blue-50 border-b-2 border-blue-200"
-              )}
-                onClick={onDateClick ? () => onDateClick(day) : undefined}
-            >
-              <div className="font-medium text-sm text-muted-foreground">
-                {daysOfWeek[index]}
-              </div>
-              <div className={cn(
-                "text-lg font-semibold mt-1",
-                isToday(day) && "text-blue-600"
-              )}>
-                {day.getDate()}
-              </div>
-            </div>
-          ))}
-        </div>
+  const getDayCardStyles = (date: Date) => {
+    const baseStyles = "group relative min-h-[400px] p-3 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 border flex flex-col";
+    
+    if (isToday(date)) {
+      return cn(baseStyles, "bg-blue-50 border-blue-200 shadow-blue-100");
+    }
+    
+    return cn(baseStyles, "bg-white border-gray-200 hover:border-gray-300 shadow-sm");
+  };
 
-        {/* Week Body */}
-        <div className="grid grid-cols-7">
-          {weekDays.map((day, dayIndex) => {
-            const dayEvents = getEventsForDate(day);
-            
-            return (
-              <div key={dayIndex} className="border-r min-h-[400px]">
-                <div 
-                  className={cn(
-                    "p-2 cursor-pointer hover:bg-muted/30 transition-colors relative min-h-[400px]",
-                    isToday(day) && "bg-blue-50/50"
-                  )}
-                  onClick={() => onDateClick(day)}
-                >
-                  <div className="space-y-1">
-                    {dayEvents.map((event) => {
-                       const categoryLabel = eventCategories.find(c => c.value === event.category)?.label || event.category;
-                       return (
-                        <div
-                          key={event.id}
-                          className={cn(
-                            getEventStyles(event),
-                            "hover:scale-100" // Desativar o scale para não cortar na visualização de semana
-                          )}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEventClick(event);
-                          }}
-                        >
-                          <div className="flex flex-col gap-1">
-                            <div className="font-bold text-xs leading-tight">
-                              {event.title}
-                            </div>
-                            <div className="text-xs opacity-75 leading-tight">
-                              {categoryLabel}
-                            </div>
-                          </div>
-                        </div>
-                       )
-                    })}
-                  </div>
+  return (
+    <div className="bg-gray-50 p-6 animate-fade-in">
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+        {weekDays.map((day, dayIndex) => {
+          const dayEvents = getEventsForDate(day);
+          
+          return (
+            <div 
+              key={dayIndex} 
+              className={getDayCardStyles(day)}
+              onClick={() => onDateClick(day)}
+            >
+              {/* Cabeçalho do Card do Dia */}
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-sm font-semibold text-gray-500">{daysOfWeek[dayIndex]}</span>
+                <div className={cn(
+                  "flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold transition-all duration-200",
+                  isToday(day) ? "bg-blue-600 text-white shadow-lg" : "text-gray-800"
+                )}>
+                  {day.getDate()}
                 </div>
               </div>
-            );
-          })}
-        </div>
+
+              {/* Lista de Eventos */}
+              <div className="space-y-1 flex-grow">
+                {dayEvents.map((event, eventIndex) => (
+                  <DraggableEvent
+                    key={event.id}
+                    event={event}
+                    index={eventIndex}
+                    onClick={onEventClick}
+                    isDraggable={false} // Desabilita o drag-and-drop na WeekView
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
