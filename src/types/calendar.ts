@@ -33,7 +33,8 @@ interface CategoryInfo {
 
 // NOVA PALETA DE CORES - Acessível e Moderna
 export const eventCategories: readonly CategoryInfo[] = [
-  { value: 'geral',        label: 'Geral',        color: 'category-geral', colorHex: '#3b82f6', tw: { background: 'bg-blue-100', foreground: 'text-blue-800', border: 'border-blue-500', hoverBackground: 'hover:bg-blue-200' }},
+  // ALTERAÇÃO: "Geral" agora é "Toda Escola"
+  { value: 'geral',        label: 'Toda Escola',  color: 'category-geral', colorHex: '#3b82f6', tw: { background: 'bg-blue-100', foreground: 'text-blue-800', border: 'border-blue-500', hoverBackground: 'hover:bg-blue-200' }},
   { value: 'infantil',     label: 'Ed. Infantil', color: 'category-infantil', colorHex: '#f59e0b', tw: { background: 'bg-amber-100', foreground: 'text-amber-800', border: 'border-amber-500', hoverBackground: 'hover:bg-amber-200' }},
   { value: 'fundamental1', label: 'Fund. I',      color: 'category-fundamental1', colorHex: '#22c55e', tw: { background: 'bg-green-100', foreground: 'text-green-800', border: 'border-green-500', hoverBackground: 'hover:bg-green-200' }},
   { value: 'fundamental2', label: 'Fund. II',     color: 'category-fundamental2', colorHex: '#06b6d4', tw: { background: 'bg-cyan-100', foreground: 'text-cyan-800', border: 'border-cyan-500', hoverBackground: 'hover:bg-cyan-200' }},
