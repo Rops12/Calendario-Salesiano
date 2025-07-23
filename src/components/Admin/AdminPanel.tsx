@@ -2,10 +2,11 @@
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdmin } from "@/hooks/useAdmin.ts";
-import { useCategories } from "@/hooks/useCategories.tsx"; // Importa o hook de categorias
-import { CategoriesManagement } from "./CategoriesManagement";
-import { UsersManagement } from "./UsersManagement";
-import { ActivityLogList } from "./ActivityLogList";
+import { useCategories } from "@/hooks/useCategories.tsx";
+// CORREÇÃO: Adicionado o caminho completo e a extensão do arquivo
+import { CategoriesManagement } from "./CategoriesManagement.tsx";
+import { UsersManagement } from "./UsersManagement.tsx";
+import { ActivityLogList } from "./ActivityLogList.tsx";
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -13,11 +14,9 @@ interface AdminPanelProps {
 }
 
 export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
-  const { users, activityLogs, currentUser, isLoading, addCategory, updateCategory, deleteCategory } = useAdmin();
-  // Usa o estado global de categorias e a função de recarregar
+  const { users, activityLogs, isLoading, addCategory, updateCategory, deleteCategory } = useAdmin();
   const { categories, refetchCategories } = useCategories();
 
-  // Envolve as funções de modificação para chamar refetchCategories
   const handleUpdateCategory = async (...args: Parameters<typeof updateCategory>) => {
     await updateCategory(...args);
     await refetchCategories();
@@ -51,7 +50,7 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
             </div>
             <TabsContent value="categories" className="flex-grow p-6 overflow-auto">
               <CategoriesManagement
-                categories={categories} // Passa as categorias do estado global
+                categories={categories}
                 onAddCategory={handleAddCategory}
                 onUpdateCategory={handleUpdateCategory}
                 onDeleteCategory={handleDeleteCategory}
