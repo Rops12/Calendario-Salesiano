@@ -1,6 +1,6 @@
 // src/components/Admin/UserManagement.tsx
 import { useState } from 'react';
-import { Plus, Edit, Trash2, Save, X, User as UserIcon } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,6 +30,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
   Dialog,
@@ -214,7 +215,8 @@ export const UserManagement = () => {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
-                  {format(new Date(user.createdAt), 'dd/MM/yyyy', { locale: ptBR })}
+                  {/* CORREÇÃO APLICADA AQUI */}
+                  {user.createdAt ? format(new Date(user.createdAt), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}
                 </TableCell>
                 <TableCell>
                   <TooltipProvider delayDuration={100}>
