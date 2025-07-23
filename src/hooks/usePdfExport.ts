@@ -3,12 +3,12 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format, startOfMonth, getDay, getYear, getMonth, eachDayOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarEvent } from '@/types/calendar';
-import { useCategories } from '@/hooks/useCategories';
+import { CalendarEvent, EventCategory } from '@/types/calendar'; // Corrigido
+import { useCategories } from '@/hooks/useCategories.tsx'; // Adicionado
 
 export const usePdfExport = (
   allEvents: CalendarEvent[],
-  selectedCategories: string[]
+  selectedCategories: EventCategory[]
 ) => {
   const { getCategory } = useCategories();
 
