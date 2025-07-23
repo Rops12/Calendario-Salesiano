@@ -21,7 +21,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Plus, Star } from 'lucide-react';
-import { useCategories } from '@/hooks/useCategories.ts'; // CORREÇÃO AQUI
+import { useCategories } from '@/hooks/useCategories.ts'; // Correção da importação
 
 const Index = () => {
   const navigate = useNavigate();
