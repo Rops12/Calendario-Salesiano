@@ -4,18 +4,15 @@
 
 @layer base {
   :root {
-    /* ALTERAÇÃO: Corrigido para o formato HSL correto. Isso representa um cinza bem claro. */
     --background: 220 13% 97%; 
     --foreground: 240 10% 3.9%;
 
-    /* ALTERAÇÃO: Corrigido para o formato HSL correto. Isso representa o branco. */
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
 
-    /* BÔNUS: O valor original (239 68% 68%) era mais para um lilás. Este novo valor é um azul mais fiel. */
     --primary: 221 83% 53%; /* Azul Salesiano */
     --primary-foreground: 0 0% 100%;
     --primary-hover: 221 83% 48%;
@@ -75,7 +72,6 @@
 }
 
 @layer utilities {
-  /* ... (o resto do arquivo permanece igual) ... */
   .bg-category-geral { background-color: hsl(var(--category-geral)); }
   .bg-category-infantil { background-color: hsl(var(--category-infantil)); }
   .bg-category-fundamental1 { background-color: hsl(var(--category-fundamental1)); }
