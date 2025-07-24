@@ -3,10 +3,9 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useCategories } from "@/hooks/useCategories";
-// CORREÇÃO FINAL: Corrigido o nome de 'UsersManagement' para 'UserManagement' (singular)
 import { CategoryManagement } from "./CategoryManagement.tsx";
-import { UserManagement } from "./UserManagement.tsx"; 
-import { ActivityLogList } from "./ActivityLogList.tsx";
+import { UserManagement } from "./UserManagement.tsx";
+import { ActivityLogs } from "./ActivityLogs.tsx"; // CORREÇÃO: Importado o componente correto do ficheiro correto.
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -14,9 +13,12 @@ interface AdminPanelProps {
 }
 
 export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
-  const { users, activityLogs, isLoading, addCategory, updateCategory, deleteCategory } = useAdmin();
-  const { categories, refetchCategories } = useCategories();
+  // O hook useAdmin já não é necessário aqui para passar dados,
+  // mas vamos mantê-lo para as funções de manipulação de categorias que precisam do refetch.
+  const { addCategory, updateCategory, deleteCategory } = useAdmin();
+  const { refetchCategories } = useCategories();
 
+  // Estas funções agora chamam o refetch para atualizar a lista de categorias em toda a aplicação.
   const handleUpdateCategory = async (...args: Parameters<typeof updateCategory>) => {
     await updateCategory(...args);
     await refetchCategories();
@@ -48,21 +50,20 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
                 <TabsTrigger value="activity">Logs</TabsTrigger>
               </TabsList>
             </div>
+            {/* CORREÇÃO: O componente CategoryManagement já não recebe as categorias via props, mas ainda recebe as funções. */}
             <TabsContent value="categories" className="flex-grow p-6 overflow-auto">
               <CategoryManagement
-                categories={categories}
                 onAddCategory={handleAddCategory}
                 onUpdateCategory={handleUpdateCategory}
                 onDeleteCategory={handleDeleteCategory}
-                isLoading={isLoading}
               />
             </TabsContent>
+             {/* CORREÇÃO: Os componentes agora são auto-suficientes e não precisam de props. */}
             <TabsContent value="users" className="flex-grow p-6 overflow-auto">
-              {/* Nome do componente corrigido para o singular */}
-              <UserManagement users={users} isLoading={isLoading} />
+              <UserManagement />
             </TabsContent>
             <TabsContent value="activity" className="flex-grow p-6 overflow-auto">
-              <ActivityLogList logs={activityLogs} isLoading={isLoading} />
+              <ActivityLogs />
             </TabsContent>
           </Tabs>
         </div>
