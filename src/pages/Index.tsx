@@ -202,7 +202,6 @@ const Index = () => {
     
   const renderView = () => {
     if (isInitialLoad) return <CalendarSkeleton />;
-    // CORREÇÃO AQUI
     const viewProps = { currentDate, events: filteredEvents, selectedCategories, onEventClick: handleEventClick };
     switch (currentView) {
       case 'month': return <CalendarGrid {...viewProps} onDateClick={handleDateClickForSheet} onAddNewEvent={handleNewEvent} onEventDrop={canEdit ? handleEventDrop : undefined} />;
