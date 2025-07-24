@@ -10,8 +10,6 @@ interface DraggableEventProps {
   isDraggable?: boolean;
 }
 
-// O DraggableEvent agora é um "invólucro" que adiciona a 
-// funcionalidade de arrastar ao nosso EventCard.
 export function DraggableEvent({ event, index, onClick, isDraggable = true }: DraggableEventProps) {
   return (
     <Draggable draggableId={event.id} index={index} isDragDisabled={!isDraggable}>
