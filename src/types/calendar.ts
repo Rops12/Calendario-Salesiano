@@ -1,32 +1,23 @@
+// src/types/calendar.ts
 export interface EventFormData {
   title: string;
   description: string;
   startDate: string;
   endDate?: string;
-  category: EventCategory; // Voltando para single category
+  category: string; // Simplificado para string
   eventType: EventType;
 }
 
 export interface CalendarEvent extends Omit<EventFormData, 'category'> {
   id: string;
-  date: string;
+  date: string; // Mantido para compatibilidade se necessário
   createdAt: string;
   updatedAt: string;
-  category: EventCategory;
+  category: string; // Simplificado para string
 }
 
-export type EventCategory = 'geral' | 'infantil' | 'fundamental1' | 'fundamental2' | 'medio' | 'pastoral' | 'esportes' | 'robotica' | 'biblioteca' | 'nap';
+export type EventCategory = string; // Agora é apenas uma string, o valor virá do DB
 export type EventType = 'normal' | 'feriado' | 'recesso' | 'evento';
 
-export const eventCategories = [
-  { value: 'geral',        label: 'Geral',        color: 'category-geral' },
-  { value: 'infantil',     label: 'Ed. Infantil', color: 'category-infantil' },
-  { value: 'fundamental1', label: 'Fund. I',      color: 'category-fundamental1' },
-  { value: 'fundamental2', label: 'Fund. II',     color: 'category-fundamental2' },
-  { value: 'medio',        label: 'Ens. Médio',   color: 'category-medio' },
-  { value: 'pastoral',     label: 'Pastoral',     color: 'category-pastoral' },
-  { value: 'esportes',     label: 'Esportes',     color: 'category-esportes' },
-  { value: 'robotica',     label: 'Robótica',     color: 'category-robotica' },
-  { value: 'biblioteca',   label: 'Biblioteca',   color: 'category-biblioteca' },
-  { value: 'nap',          label: 'NAP',          color: 'category-nap' },
-] as const;
+// O ARRAY 'eventCategories' FOI REMOVIDO DESTE ARQUIVO.
+// A fonte da verdade agora é o banco de dados via useCategories.

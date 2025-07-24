@@ -1,19 +1,48 @@
+// src/hooks/usePdfExport.ts
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, getYear, getMonth } from 'date-fns';
+import { format, startOfMonth, getDay, getYear, getMonth, eachDayOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarEvent, EventCategory, eventCategories } from '@/types/calendar';
-
-// Remova a declaração de módulo daqui, pois não é mais necessária com a importação explícita.
-
-const getCategoryData = (category: EventCategory) => {
-  return eventCategories.find(cat => cat.value === category);
-};
+import { CalendarEvent, EventCategory } from '@/types/calendar'; // Corrigido
+import { useCategories } from '@/hooks/useCategories.tsx'; // Adicionado
 
 export const usePdfExport = (
   allEvents: CalendarEvent[],
   selectedCategories: EventCategory[]
 ) => {
+  const { getCategory } = useCategories();
+
+  // Função interna para obter a cor hexadecimal a partir de HSL
+  const hslToHex = (h: number, s: number, l: number): string => {
+    l /= 100;
+    const a = s * Math.min(l, 1 - l) / 100;
+    const f = (n: number) => {
+      const k = (n + h / 30) % 12;
+      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+      return Math.round(255 * color).toString(16).padStart(2, '0');
+    };
+    return `#${f(0)}${f(8)}${f(4)}`;
+  };
+  
+  const parseHsl = (hsl: string): [number, number, number] | null => {
+    const match = hsl.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
+    if (match) {
+      return [parseInt(match[1]), parseInt(match[2]), parseInt(match[3])];
+    }
+    return null;
+  };
+  
+  const getCategoryColorHex = (categoryValue: string): string => {
+      const category = getCategory(categoryValue);
+      if (category && category.color) {
+        const hslValues = parseHsl(category.color);
+        if (hslValues) {
+          return hslToHex(...hslValues);
+        }
+      }
+      return '#d1d5db'; // Cinza como fallback
+  };
+
   const exportFullYearToPdf = (year: number) => {
     const doc = new jsPDF('p', 'pt', 'a4');
     const filteredEvents = allEvents.filter(event => selectedCategories.includes(event.category));
@@ -91,9 +120,10 @@ export const usePdfExport = (
         const eventX = data.cell.x + 4, eventWidth = data.cell.width - 8, eventHeight = 14, maxEvents = 3;
         events.slice(0, maxEvents).forEach((event) => {
           if (eventY + eventHeight > data.cell.y + data.cell.height - 5) return;
-          const categoryData = getCategoryData(event.category);
-          const color = categoryData?.colorHex || '#d1d5db';
+          
+          const color = getCategoryColorHex(event.category);
           doc.setFillColor(color);
+
           doc.roundedRect(eventX, eventY, eventWidth, eventHeight, 3, 3, 'F');
           doc.setTextColor('#ffffff');
           doc.setFontSize(8);
