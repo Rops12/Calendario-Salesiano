@@ -2,7 +2,7 @@
 import { CalendarEvent } from '@/types/calendar';
 import { cn } from '@/lib/utils';
 import { Star } from 'lucide-react';
-import { useCategories } from '@/hooks/useCategories.tsx'; // Importado
+import { useCategories } from '@/hooks/useCategories.tsx';
 
 interface EventCardProps {
   event: CalendarEvent;
