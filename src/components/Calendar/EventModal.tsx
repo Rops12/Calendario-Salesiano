@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CalendarEvent, EventFormData, EventType, EventCategory } from '@/types/calendar';
-import { CategoryConfig } from '@/types/admin'; // Importado
+import { CategoryConfig } from '@/types/admin';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -19,7 +19,7 @@ interface EventModalProps {
   onDelete?: (id: string) => void;
   event?: CalendarEvent | null;
   selectedDate?: Date;
-  categories: CategoryConfig[]; // Propriedade adicionada
+  categories: CategoryConfig[];
 }
 
 const eventTypeOptions: { value: EventType, label: string, description: string }[] = [
@@ -36,7 +36,7 @@ export function EventModal({
   onDelete, 
   event, 
   selectedDate,
-  categories // Propriedade recebida
+  categories
 }: EventModalProps) {
   const { toast } = useToast();
   const [formData, setFormData] = useState<EventFormData>({
@@ -118,7 +118,6 @@ export function EventModal({
           <DialogTitle>{isReadOnly ? 'Visualizar Evento' : (event ? 'Editar Evento' : 'Novo Evento')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* ... campos de título, descrição, datas ... */}
           <div className="space-y-2">
             <Label htmlFor="title">Título</Label>
             <Input id="title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Digite o título do evento" required disabled={isReadOnly} />
@@ -145,7 +144,6 @@ export function EventModal({
                 <SelectValue placeholder="Selecione um segmento" />
               </SelectTrigger>
               <SelectContent>
-                {/* O select agora usa as categorias dinâmicas */}
                 {categories.map((category) => (
                   <SelectItem key={category.value} value={category.value}>
                     {category.label}
