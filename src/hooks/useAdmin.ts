@@ -49,19 +49,20 @@ export const useAdmin = () => {
 
   const addUser = async (userData: Omit<AdminUser, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      // Nota: Para criar usuários seria necessário usar o Supabase Auth Admin
-      // Por agora, apenas mostra mensagem informativa
-      console.log('Add user functionality requires Supabase Auth Admin API');
+      const newUser = await adminService.addUser(userData);
+      setUsers(prev => [newUser, ...prev]);
+      
       await addLog({
         userId: currentUser.id,
         userName: currentUser.email,
         action: 'create',
         target: 'user',
-        targetId: 'pending',
-        description: `Tentou criar usuário "${userData.name}"`
+        targetId: newUser.id,
+        description: `Criou usuário "${userData.name}" (${userData.email})`
       });
     } catch (error) {
       console.error('Error adding user:', error);
+      throw error;
     }
   };
 
@@ -87,6 +88,7 @@ export const useAdmin = () => {
       }
     } catch (error) {
       console.error('Error updating user:', error);
+      throw error;
     }
   };
 
@@ -108,6 +110,24 @@ export const useAdmin = () => {
       }
     } catch (error) {
       console.error('Error deleting user:', error);
+      throw error;
+    }
+  };
+
+  const sendPasswordReset = async (email: string) => {
+    try {
+      await adminService.sendPasswordResetEmail(email);
+      await addLog({
+        userId: currentUser.id,
+        userName: currentUser.email,
+        action: 'update',
+        target: 'user',
+        targetId: email,
+        description: `Enviou email de redefinição de senha para "${email}"`
+      });
+    } catch (error) {
+      console.error('Error sending password reset:', error);
+      throw error;
     }
   };
 
@@ -205,6 +225,7 @@ export const useAdmin = () => {
     addUser,
     updateUser,
     deleteUser,
+    sendPasswordReset,
     addCategory,
     updateCategory,
     deleteCategory,

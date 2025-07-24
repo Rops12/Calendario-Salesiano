@@ -6,7 +6,8 @@ export class SupabaseAdminService {
   async getUsers(): Promise<AdminUser[]> {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, email, is_admin, role, created_at, updated_at');
+      .select('id, email, is_admin, role, created_at, updated_at')
+      .order('created_at', { ascending: false });
     
     if (error) throw error;
     
@@ -14,19 +15,61 @@ export class SupabaseAdminService {
       id: profile.id,
       name: profile.email?.split('@')[0] || 'Usuário',
       email: profile.email || '',
-      role: profile.role as 'admin' | 'editor' | 'viewer',
+      role: (profile.role as 'admin' | 'editor' | 'viewer') || 'viewer',
       createdAt: profile.created_at,
       updatedAt: profile.updated_at
     }));
   }
 
+  async addUser(userData: Omit<AdminUser, 'id' | 'createdAt' | 'updatedAt'>): Promise<AdminUser> {
+    // Primeiro, criar o usuário no auth
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: userData.email,
+      password: 'temp123456', // Senha temporária
+      email_confirm: true
+    });
+
+    if (authError) throw new Error(`Erro ao criar usuário: ${authError.message}`);
+    if (!authData.user) throw new Error('Falha ao criar usuário');
+
+    // Depois, atualizar o perfil com os dados corretos
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .update({
+        email: userData.email,
+        role: userData.role,
+        is_admin: userData.role === 'admin'
+      })
+      .eq('id', authData.user.id)
+      .select()
+      .single();
+
+    if (profileError) {
+      // Se falhar ao atualizar o perfil, tentar deletar o usuário criado
+      await supabase.auth.admin.deleteUser(authData.user.id);
+      throw new Error(`Erro ao criar perfil: ${profileError.message}`);
+    }
+
+    return {
+      id: authData.user.id,
+      name: userData.name,
+      email: userData.email,
+      role: userData.role,
+      createdAt: profileData.created_at,
+      updatedAt: profileData.updated_at
+    };
+  }
+
   async updateUser(id: string, userData: Partial<AdminUser>): Promise<void> {
     const updateData: any = {};
     
+    if (userData.email) updateData.email = userData.email;
     if (userData.role) {
       updateData.role = userData.role;
       updateData.is_admin = userData.role === 'admin';
     }
+    
+    updateData.updated_at = new Date().toISOString();
     
     const { error } = await supabase
       .from('profiles')
@@ -34,16 +77,24 @@ export class SupabaseAdminService {
       .eq('id', id);
     
     if (error) throw error;
+
+    // Se o email foi alterado, também atualizar no auth
+    if (userData.email) {
+      const { error: authError } = await supabase.auth.admin.updateUserById(id, {
+        email: userData.email
+      });
+      
+      if (authError) {
+        console.warn('Erro ao atualizar email no auth:', authError);
+      }
+    }
   }
 
   async deleteUser(id: string): Promise<void> {
-    // Deletar o perfil (o usuário auth será deletado via cascade)
-    const { error } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('id', id);
+    // Primeiro deletar o usuário do auth (isso também deletará o perfil via cascade)
+    const { error: authError } = await supabase.auth.admin.deleteUser(id);
     
-    if (error) throw error;
+    if (authError) throw new Error(`Erro ao deletar usuário: ${authError.message}`);
   }
 
   // Category Management
@@ -135,5 +186,13 @@ export class SupabaseAdminService {
       });
     
     if (error) throw error;
+  }
+
+  async sendPasswordResetEmail(email: string): Promise<void> {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`
+    });
+    
+    if (error) throw new Error(`Erro ao enviar email de redefinição: ${error.message}`);
   }
 }
