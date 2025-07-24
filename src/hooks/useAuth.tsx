@@ -60,6 +60,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setIsLoading(false);
         }
+      })
+      .catch(async (error) => {
+        // Handle invalid refresh token or other session errors
+        console.warn('Session retrieval failed:', error);
+        await authService.logout();
+        setUser(null);
+        setIsLoading(false);
       });
 
     return () => subscription.unsubscribe();
