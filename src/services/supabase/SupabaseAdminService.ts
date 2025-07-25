@@ -2,6 +2,28 @@ import { supabase } from '@/integrations/supabase/client';
 import { AdminUser, ActivityLog, CategoryConfig } from '@/types/admin';
 
 export class SupabaseAdminService {
+  private async callAdminFunction(action: string, data: any) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Não autenticado');
+
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users?action=${action}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Erro na operação');
+    }
+    
+    return result;
+  }
+
   // User Management
   async getUsers(): Promise<AdminUser[]> {
     const { data, error } = await supabase
@@ -22,79 +44,16 @@ export class SupabaseAdminService {
   }
 
   async addUser(userData: Omit<AdminUser, 'id' | 'createdAt' | 'updatedAt'>): Promise<AdminUser> {
-    // Primeiro, criar o usuário no auth
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email: userData.email,
-      password: 'temp123456', // Senha temporária
-      email_confirm: true
-    });
-
-    if (authError) throw new Error(`Erro ao criar usuário: ${authError.message}`);
-    if (!authData.user) throw new Error('Falha ao criar usuário');
-
-    // Depois, atualizar o perfil com os dados corretos
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .update({
-        email: userData.email,
-        role: userData.role,
-        is_admin: userData.role === 'admin'
-      })
-      .eq('id', authData.user.id)
-      .select()
-      .single();
-
-    if (profileError) {
-      // Se falhar ao atualizar o perfil, tentar deletar o usuário criado
-      await supabase.auth.admin.deleteUser(authData.user.id);
-      throw new Error(`Erro ao criar perfil: ${profileError.message}`);
-    }
-
-    return {
-      id: authData.user.id,
-      name: userData.name,
-      email: userData.email,
-      role: userData.role,
-      createdAt: profileData.created_at,
-      updatedAt: profileData.updated_at
-    };
+    const result = await this.callAdminFunction('create', userData);
+    return result.user;
   }
 
   async updateUser(id: string, userData: Partial<AdminUser>): Promise<void> {
-    const updateData: any = {};
-    
-    if (userData.email) updateData.email = userData.email;
-    if (userData.role) {
-      updateData.role = userData.role;
-      updateData.is_admin = userData.role === 'admin';
-    }
-    
-    updateData.updated_at = new Date().toISOString();
-    
-    const { error } = await supabase
-      .from('profiles')
-      .update(updateData)
-      .eq('id', id);
-    
-    if (error) throw error;
-
-    // Se o email foi alterado, também atualizar no auth
-    if (userData.email) {
-      const { error: authError } = await supabase.auth.admin.updateUserById(id, {
-        email: userData.email
-      });
-      
-      if (authError) {
-        console.warn('Erro ao atualizar email no auth:', authError);
-      }
-    }
+    await this.callAdminFunction('update', { id, ...userData });
   }
 
   async deleteUser(id: string): Promise<void> {
-    // Primeiro deletar o usuário do auth (isso também deletará o perfil via cascade)
-    const { error: authError } = await supabase.auth.admin.deleteUser(id);
-    
-    if (authError) throw new Error(`Erro ao deletar usuário: ${authError.message}`);
+    await this.callAdminFunction('delete', { id });
   }
 
   // Category Management
@@ -189,10 +148,6 @@ export class SupabaseAdminService {
   }
 
   async sendPasswordResetEmail(email: string): Promise<void> {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`
-    });
-    
-    if (error) throw new Error(`Erro ao enviar email de redefinição: ${error.message}`);
+    await this.callAdminFunction('reset-password', { email });
   }
 }
