@@ -85,6 +85,7 @@ export function useCalendarEvents() {
     try {
       const newEvent = await eventService.createEvent(data);
       setEvents(prev => [...prev, newEvent]);
+      // Notification is handled in the service
     } catch (error) {
       console.error('Error creating event:', error);
       throw error;
@@ -97,6 +98,7 @@ export function useCalendarEvents() {
       setEvents(prev => prev.map(event => 
         event.id === id ? updatedEvent : event
       ));
+      // Notification is handled in the service
     } catch (error) {
       console.error('Error updating event:', error);
       throw error;
@@ -107,6 +109,7 @@ export function useCalendarEvents() {
     try {
       await eventService.deleteEvent(id);
       setEvents(prev => prev.filter(event => event.id !== id));
+      // Notification is handled in the service
     } catch (error) {
       console.error('Error deleting event:', error);
       throw error;

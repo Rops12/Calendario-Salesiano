@@ -1,8 +1,56 @@
 import { supabase } from '@/integrations/supabase/client';
 import { CalendarEvent, EventFormData } from '@/types/calendar';
 import { IEventService } from '../interfaces/IEventService';
+import { useAuth } from '@/hooks/useAuth';
 
 export class SupabaseEventService implements IEventService {
+  private async sendEventNotification(
+    eventId: string,
+    eventData: EventFormData | CalendarEvent,
+    action: 'created' | 'updated' | 'deleted'
+  ) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', session.user.id)
+        .single();
+
+      const userName = profile?.email?.split('@')[0] || 'Usuário';
+      const userEmail = profile?.email || session.user.email || '';
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-event-notification`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          eventId,
+          eventTitle: eventData.title,
+          eventDescription: eventData.description,
+          eventDate: eventData.startDate,
+          eventCategory: eventData.category,
+          action,
+          userEmail,
+          userName
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to send event notification:', await response.text());
+      } else {
+        const result = await response.json();
+        console.log(`Event notification sent to ${result.emailsSent} users`);
+      }
+    } catch (error) {
+      console.error('Error sending event notification:', error);
+    }
+  }
+
   async getEventsByDateRange(startDate: string, endDate: string): Promise<CalendarEvent[]> {
     const { data, error } = await supabase
       .from('events')
@@ -66,7 +114,12 @@ export class SupabaseEventService implements IEventService {
       throw new Error('Erro ao criar evento');
     }
 
-    return this.mapDatabaseToEvent(data);
+    const newEvent = this.mapDatabaseToEvent(data);
+    
+    // Send notification email
+    await this.sendEventNotification(newEvent.id, eventData, 'created');
+    
+    return newEvent;
   }
 
   async updateEvent(id: string, eventData: EventFormData): Promise<CalendarEvent> {
@@ -90,10 +143,22 @@ export class SupabaseEventService implements IEventService {
       throw new Error('Erro ao atualizar evento');
     }
 
-    return this.mapDatabaseToEvent(data);
+    const updatedEvent = this.mapDatabaseToEvent(data);
+    
+    // Send notification email
+    await this.sendEventNotification(id, eventData, 'updated');
+    
+    return updatedEvent;
   }
 
   async deleteEvent(id: string): Promise<void> {
+    // Get event data before deletion for notification
+    const { data: eventData } = await supabase
+      .from('events')
+      .select('*')
+      .eq('id', id)
+      .single();
+
     const { error } = await supabase
       .from('events')
       .delete()
@@ -102,6 +167,12 @@ export class SupabaseEventService implements IEventService {
     if (error) {
       console.error('Error deleting event:', error);
       throw new Error('Erro ao excluir evento');
+    }
+
+    // Send notification email if event was found
+    if (eventData) {
+      const mappedEvent = this.mapDatabaseToEvent(eventData);
+      await this.sendEventNotification(id, mappedEvent, 'deleted');
     }
   }
 

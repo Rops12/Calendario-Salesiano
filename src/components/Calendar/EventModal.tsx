@@ -93,7 +93,12 @@ export function EventModal({
     if (onSave) {
       onSave(formData);
       onClose();
-      toast({ title: event ? "Evento atualizado" : "Evento criado", description: event ? "O evento foi atualizado com sucesso." : "O evento foi criado com sucesso." });
+      toast({ 
+        title: event ? "Evento atualizado" : "Evento criado", 
+        description: event 
+          ? "O evento foi atualizado e todos os usuários foram notificados por email." 
+          : "O evento foi criado e todos os usuários foram notificados por email." 
+      });
     }
   };
 
@@ -103,7 +108,10 @@ export function EventModal({
     if (event && onDelete) {
       onDelete(event.id);
       onClose();
-      toast({ title: "Evento excluído", description: "O evento foi excluído com sucesso." });
+      toast({ 
+        title: "Evento excluído", 
+        description: "O evento foi excluído e todos os usuários foram notificados por email." 
+      });
     }
   };
   
