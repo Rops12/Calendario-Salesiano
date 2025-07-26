@@ -109,10 +109,11 @@ serve(async (req) => {
           )
         }
 
-        // Update profile
+        // Update profile with name
         const { data: profileData, error: profileError } = await supabaseAdmin
           .from('profiles')
           .update({
+            name: body.name, // CORREÇÃO AQUI
             email: body.email,
             role: body.role,
             is_admin: body.role === 'admin'
@@ -154,7 +155,8 @@ serve(async (req) => {
         const body: UpdateUserRequest = await req.json()
         
         const updateData: any = {}
-        if (body.email) updateData.email = body.email
+        if (body.name) updateData.name = body.name; // CORREÇÃO AQUI
+        if (body.email) updateData.email = body.email;
         if (body.role) {
           updateData.role = body.role
           updateData.is_admin = body.role === 'admin'
