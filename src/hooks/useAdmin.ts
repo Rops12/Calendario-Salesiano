@@ -1,3 +1,4 @@
+// src/hooks/useAdmin.ts
 import { useState, useEffect } from 'react';
 import { AdminUser, ActivityLog, CategoryConfig } from '@/types/admin';
 import { User } from '@/services/interfaces/IAuthService';
@@ -134,19 +135,15 @@ export const useAdmin = () => {
   const addCategory = async (categoryData: Omit<CategoryConfig, 'isActive'>) => {
     try {
       await adminService.addCategory(categoryData);
-      const newCategory: CategoryConfig = {
-        ...categoryData,
-        isActive: true
-      };
-      setCategories(prev => [...prev, newCategory]);
+      await loadAdminData(); // CORREÇÃO AQUI
       
       await addLog({
         userId: currentUser.id,
         userName: currentUser.email,
         action: 'category_add',
         target: 'category',
-        targetId: newCategory.value,
-        description: `Adicionou categoria "${newCategory.label}"`
+        targetId: categoryData.value,
+        description: `Adicionou categoria "${categoryData.label}"`
       });
     } catch (error) {
       console.error('Error adding category:', error);
@@ -156,9 +153,7 @@ export const useAdmin = () => {
   const updateCategory = async (value: string, categoryData: Partial<CategoryConfig>) => {
     try {
       await adminService.updateCategory(value, categoryData);
-      setCategories(prev => prev.map(cat => 
-        cat.value === value ? { ...cat, ...categoryData } : cat
-      ));
+      await loadAdminData(); // CORREÇÃO AQUI
       
       const category = categories.find(c => c.value === value);
       if (category) {
@@ -180,7 +175,7 @@ export const useAdmin = () => {
     try {
       const category = categories.find(c => c.value === value);
       await adminService.deleteCategory(value);
-      setCategories(prev => prev.filter(cat => cat.value !== value));
+      await loadAdminData(); // CORREÇÃO AQUI
       
       if (category) {
         await addLog({
