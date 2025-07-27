@@ -95,7 +95,7 @@ CREATE TRIGGER update_event_categories_updated_at
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 -- Adicionar coluna de papel (role) na tabela profiles
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'viewer' CHECK (role IN ('admin', 'editor', 'viewer'));
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'editor' CHECK (role IN ('admin', 'editor'));
 
 -- Atualizar função handle_new_user para incluir role
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -107,8 +107,8 @@ BEGIN
     NEW.email,
     -- Primeiro usuário será admin
     NOT EXISTS (SELECT 1 FROM public.profiles),
-    -- Se for admin, role é admin, senão viewer
-    CASE WHEN NOT EXISTS (SELECT 1 FROM public.profiles) THEN 'admin' ELSE 'viewer' END
+    -- Se for admin, role é admin, senão editor
+    CASE WHEN NOT EXISTS (SELECT 1 FROM public.profiles) THEN 'admin' ELSE 'editor' END
   );
   RETURN NEW;
 END;

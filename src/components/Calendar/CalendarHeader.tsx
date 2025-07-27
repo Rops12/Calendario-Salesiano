@@ -1,4 +1,4 @@
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Search, Settings, LogOut, User, Download } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Search, Settings, LogOut, User, Download, Link } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ViewSwitcher, CalendarView } from './ViewSwitcher';
@@ -10,6 +10,7 @@ import { ptBR } from 'date-fns/locale';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 interface CalendarHeaderProps {
   currentDate: Date;
@@ -42,6 +43,7 @@ export function CalendarHeader({
 }: CalendarHeaderProps) {
   const { user, logout } = useAuth();
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const { toast } = useToast();
   
   const formatDateDisplay = (date: Date, view: CalendarView) => {
     switch(view) {
@@ -75,6 +77,12 @@ export function CalendarHeader({
   const handleLogout = async () => {
     await logout();
   };
+  
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast({ title: "Link copiado para a área de transferência!" });
+  };
+
 
   return (
     <header className="bg-[#4F46E5] shadow-lg">
@@ -97,6 +105,15 @@ export function CalendarHeader({
           </div>
           
           <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleShare}
+              className="text-white hover:bg-white/10"
+              title="Compartilhar Calendário"
+            >
+              <Link className="h-4 w-4" />
+            </Button>
             {onNewEvent && (
               <Button 
                 onClick={() => onNewEvent()}
@@ -107,25 +124,27 @@ export function CalendarHeader({
               </Button>
             )}
             
-            <div className="flex items-center gap-2 text-white">
-              <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-white/10 rounded-lg backdrop-blur-sm border border-white/20">
-                <User className="h-4 w-4" />
-                <span className="text-sm font-medium">{user?.email}</span>
-                {user?.isAdmin && (
-                  <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Admin</span>
-                )}
+            {user &&
+              <div className="flex items-center gap-2 text-white">
+                <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-white/10 rounded-lg backdrop-blur-sm border border-white/20">
+                  <User className="h-4 w-4" />
+                  <span className="text-sm font-medium">{user?.email}</span>
+                  {user?.isAdmin && (
+                    <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Admin</span>
+                  )}
+                </div>
+                
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={handleLogout}
+                  className="text-white hover:bg-white/10 transition-all duration-200 hover:scale-105"
+                  title="Sair"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
               </div>
-              
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={handleLogout}
-                className="text-white hover:bg-white/10 transition-all duration-200 hover:scale-105"
-                title="Sair"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
+            }
           </div>
         </div>
 
@@ -194,14 +213,11 @@ export function CalendarHeader({
               />
             </div>
             
-            <Button 
-              variant="ghost" 
-              size="sm"
-              className="text-white hover:bg-white/10 transition-all duration-200 hover:scale-105 p-2"
-              title="Exportar Calendário"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
+            <ExportButton 
+              currentDate={currentDate}
+              events={events}
+              selectedCategories={selectedCategories}
+            />
             
             {isAdmin && onAdminPanelOpen && (
               <Button 

@@ -50,19 +50,16 @@ import { ptBR } from 'date-fns/locale';
 const roleLabels = {
   admin: 'Administrador',
   editor: 'Editor',
-  viewer: 'Visualizador'
 };
 
 const roleVariants = {
   admin: 'destructive',
   editor: 'default',
-  viewer: 'secondary'
 } as const;
 
 const roleDescriptions = {
   admin: 'Acesso completo ao sistema, incluindo gerenciamento de usuários',
   editor: 'Pode criar, editar e excluir eventos e categorias',
-  viewer: 'Apenas visualização de eventos'
 };
 
 const UserForm = ({
@@ -78,7 +75,7 @@ const UserForm = ({
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    role: user?.role || 'viewer',
+    role: user?.role || 'editor',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -145,7 +142,7 @@ const UserForm = ({
           <Label htmlFor="user-role">Permissão</Label>
           <Select
             value={formData.role}
-            onValueChange={(value: 'admin' | 'editor' | 'viewer') =>
+            onValueChange={(value: 'admin' | 'editor') =>
               setFormData(prev => ({ ...prev, role: value }))
             }
             disabled={isSubmitting}
@@ -154,12 +151,6 @@ const UserForm = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="viewer">
-                <div>
-                  <div className="font-medium">Visualizador</div>
-                  <div className="text-xs text-muted-foreground">{roleDescriptions.viewer}</div>
-                </div>
-              </SelectItem>
               <SelectItem value="editor">
                 <div>
                   <div className="font-medium">Editor</div>
@@ -329,8 +320,8 @@ export const UserManagement = () => {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={roleVariants[user.role]}>
-                    {roleLabels[user.role]}
+                  <Badge variant={roleVariants[user.role as keyof typeof roleVariants]}>
+                    {roleLabels[user.role as keyof typeof roleLabels]}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">

@@ -10,14 +10,14 @@ const corsHeaders = {
 interface CreateUserRequest {
   name: string;
   email: string;
-  role: 'admin' | 'editor' | 'viewer';
+  role: 'admin' | 'editor';
 }
 
 interface UpdateUserRequest {
   id: string;
   name?: string;
   email?: string;
-  role?: 'admin' | 'editor' | 'viewer';
+  role?: 'admin' | 'editor';
 }
 
 interface DeleteUserRequest {
