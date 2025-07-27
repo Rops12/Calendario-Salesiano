@@ -2,6 +2,7 @@ export interface User {
   id: string;
   email: string;
   isAdmin?: boolean;
+  role?: 'admin' | 'editor'; // Papel de visualizador removido
 }
 
 export interface LoginCredentials {
