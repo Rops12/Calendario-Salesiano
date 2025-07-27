@@ -19,7 +19,8 @@ export class SupabaseAuthService implements IAuthService {
     return {
       id: session.user.id,
       email: session.user.email || '',
-      isAdmin: profile?.is_admin || false
+      isAdmin: profile?.is_admin || false,
+      role: profile?.role as 'admin' | 'editor' | undefined
     };
   }
 
@@ -53,7 +54,8 @@ export class SupabaseAuthService implements IAuthService {
         .insert({
           id: data.user.id,
           email: data.user.email,
-          is_admin: false
+          is_admin: false,
+          role: 'editor' // Novo padrão
         })
         .select()
         .single();
@@ -61,14 +63,16 @@ export class SupabaseAuthService implements IAuthService {
       return {
         id: data.user.id,
         email: data.user.email || '',
-        isAdmin: newProfile?.is_admin || false
+        isAdmin: newProfile?.is_admin || false,
+        role: newProfile?.role as 'admin' | 'editor' | undefined
       };
     }
 
     return {
       id: data.user.id,
       email: data.user.email || '',
-      isAdmin: profile?.is_admin || false
+      isAdmin: profile?.is_admin || false,
+      role: profile?.role as 'admin' | 'editor' | undefined
     };
   }
 
@@ -101,7 +105,8 @@ export class SupabaseAuthService implements IAuthService {
     return {
       id: data.user.id,
       email: data.user.email || '',
-      isAdmin: false
+      isAdmin: false,
+      role: 'editor'
     };
   }
 }
