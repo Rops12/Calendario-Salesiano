@@ -17,16 +17,13 @@ import { CalendarEvent, EventFormData } from '@/types/calendar';
 import { useToast } from '@/hooks/use-toast.tsx';
 import { CalendarSkeleton } from '@/components/Calendar/CalendarSkeleton';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Plus, Star } from 'lucide-react';
+import { DayEventModal } from '@/components/Calendar/DayEventModal';
 import { useCategories } from '@/hooks/useCategories.tsx';
 
 const Index = () => {
   const navigate = useNavigate();
   const params = useParams();
-  const { categories, getCategory } = useCategories();
+  const { categories } = useCategories();
 
   const [currentDate, setCurrentDate] = useState(() => {
     const dateParam = params.date;
@@ -62,9 +59,6 @@ const Index = () => {
     }
   }, [categories]);
   
-  const [isDaySheetOpen, setIsDaySheetOpen] = useState(false);
-  const [daySheetEvents, setDaySheetEvents] = useState<CalendarEvent[]>([]);
-  const [daySheetDate, setDaySheetDate] = useState<Date | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -73,6 +67,9 @@ const Index = () => {
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const [isCommandOpen, setIsCommandOpen] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState<'next' | 'prev' | null>(null);
+
+  const [isDayModalOpen, setIsDayModalOpen] = useState(false);
+  const [selectedDateForModal, setSelectedDateForModal] = useState<Date | null>(null);
 
   const { events, isLoading, createEvent, updateEvent, deleteEvent } = useCalendarEvents();
   const { isAdmin, canEdit } = useAdmin();
@@ -154,16 +151,9 @@ const Index = () => {
     setIsModalOpen(true);
   };
 
-  const handleDateClickForSheet = (date: Date) => {
-    const dateStr = format(date, 'yyyy-MM-dd');
-    const eventsForDay = filteredEvents.filter(event => {
-      const eventStartDate = event.startDate.split('T')[0];
-      const eventEndDate = event.endDate ? event.endDate.split('T')[0] : eventStartDate;
-      return dateStr >= eventStartDate && dateStr <= eventEndDate;
-    });
-    setDaySheetEvents(eventsForDay.sort((a, b) => a.title.localeCompare(b.title)));
-    setDaySheetDate(date);
-    setIsDaySheetOpen(true);
+  const handleDateClickForModal = (date: Date) => {
+    setSelectedDateForModal(date);
+    setIsDayModalOpen(true);
   };
 
   const handleSaveEvent = (data: EventFormData) => {
@@ -195,6 +185,16 @@ const Index = () => {
     selectedCategories.includes(event.category)
   ), [events, searchQuery, selectedCategories]);
 
+  const dailyEventsForModal = useMemo(() => {
+    if (!selectedDateForModal) return [];
+    const dateStr = format(selectedDateForModal, 'yyyy-MM-dd');
+    return filteredEvents.filter(event => {
+        const eventStartDate = event.startDate.split('T')[0];
+        const eventEndDate = event.endDate ? event.endDate.split('T')[0] : eventStartDate;
+        return dateStr >= eventStartDate && dateStr <= eventEndDate;
+    }).sort((a, b) => a.title.localeCompare(b.title));
+  }, [selectedDateForModal, filteredEvents]);
+
   const animationClass = 
     transitionDirection === 'next' ? 'animate-[slide-in-from-right_0.3s_ease-out]' :
     transitionDirection === 'prev' ? 'animate-[slide-in-from-left_0.3s_ease-out]' :
@@ -202,11 +202,10 @@ const Index = () => {
     
   const renderView = () => {
     if (isInitialLoad) return <CalendarSkeleton />;
-    // CORREÇÃO AQUI
     const viewProps = { currentDate, events: filteredEvents, selectedCategories, onEventClick: handleEventClick };
     switch (currentView) {
-      case 'month': return <CalendarGrid {...viewProps} onDateClick={handleDateClickForSheet} onAddNewEvent={handleNewEvent} onEventDrop={canEdit ? handleEventDrop : undefined} />;
-      case 'week': return <WeekView {...viewProps} onDateClick={canEdit ? handleDateClickForSheet : undefined} />;
+      case 'month': return <CalendarGrid {...viewProps} onDateClick={handleDateClickForModal} onAddNewEvent={handleNewEvent} onEventDrop={canEdit ? handleEventDrop : undefined} />;
+      case 'week': return <WeekView {...viewProps} onDateClick={canEdit ? handleDateClickForModal : undefined} />;
       case 'agenda': return <AgendaView {...viewProps} onNewEventClick={canEdit ? handleNewEvent : undefined} />;
       default: return null;
     }
@@ -215,15 +214,6 @@ const Index = () => {
   const runCommand = (command: () => void) => {
     command();
     setIsCommandOpen(false);
-  };
-
-  const getEventTypeStyles = (event: CalendarEvent) => {
-    switch (event.eventType) {
-      case 'feriado': return 'bg-red-100 text-red-800 border-red-200 font-semibold';
-      case 'recesso': return 'bg-orange-100 text-orange-800 border-orange-200 font-semibold';
-      case 'evento': return 'bg-yellow-100 text-yellow-800 border-yellow-200 font-semibold';
-      default: return 'bg-card hover:bg-muted/50 text-card-foreground border';
-    }
   };
 
   return (
@@ -237,38 +227,16 @@ const Index = () => {
       <CategoryFilters selectedCategories={selectedCategories} onToggleCategory={handleToggleCategory} />
       <div><div key={currentDate.getTime()} className={animationClass}>{renderView()}</div></div>
 
-      <Sheet open={isDaySheetOpen} onOpenChange={setIsDaySheetOpen}>
-        <SheetContent className="w-full sm:max-w-md">
-          <SheetHeader>
-            <SheetTitle>{daySheetDate && format(daySheetDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}</SheetTitle>
-            <SheetDescription>{daySheetEvents.length} evento(s) encontrado(s).</SheetDescription>
-          </SheetHeader>
-          <div className="py-4 space-y-3">
-            {daySheetEvents.length > 0 ? daySheetEvents.map(event => {
-                const categoryData = getCategory(event.category) || { label: event.category, color: '#9ca3af' };
-                return (
-                    <div key={event.id} onClick={() => { handleEventClick(event); setIsDaySheetOpen(false); }}
-                        className={cn("p-4 rounded-lg border cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-medium", getEventTypeStyles(event))}>
-                        <div className="flex items-start gap-3">
-                            {event.eventType === 'evento' && <Star className="w-4 h-4 mt-0.5 text-yellow-600 flex-shrink-0" />}
-                            <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-foreground mb-1 break-words whitespace-normal leading-tight">{event.title}</h4>
-                                {event.description && (<p className="text-sm text-muted-foreground break-words whitespace-normal leading-tight mb-2">{event.description}</p>)}
-                                <div className="flex items-center gap-2">
-                                    <span className={cn('inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-muted text-muted-foreground')}>
-                                      <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: categoryData.color }} />
-                                      {categoryData.label}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }) : <p className="text-muted-foreground text-center py-8">Nenhum evento para este dia.</p>}
-          </div>
-          {canEdit && daySheetDate && <Button onClick={() => { handleNewEvent(daySheetDate); setIsDaySheetOpen(false); }} className="w-full"><Plus className="h-4 w-4 mr-2" /> Adicionar Evento</Button>}
-        </SheetContent>
-      </Sheet>
+      <DayEventModal
+        isOpen={isDayModalOpen}
+        onClose={() => setIsDayModalOpen(false)}
+        date={selectedDateForModal}
+        events={dailyEventsForModal}
+        onAddNewEvent={handleNewEvent}
+        onEventClick={handleEventClick}
+        categories={categories.filter(c => c.isActive)}
+        canEdit={!!canEdit}
+      />
 
       <CommandDialog open={isCommandOpen} onOpenChange={setIsCommandOpen}>
         <CommandInput placeholder="Digite um comando ou pesquise..." />
