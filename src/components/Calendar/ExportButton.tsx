@@ -1,6 +1,6 @@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Download, CalendarDays, CalendarWeek, BookText } from 'lucide-react';
+import { Download, CalendarDays, View, BookText } from 'lucide-react'; // Ícone corrigido aqui
 import { usePdfExport } from '@/hooks/usePdfExport';
 import { CalendarEvent, EventCategory } from '@/types/calendar';
 
@@ -43,7 +43,7 @@ export function ExportButton({ currentDate, events, selectedCategories }: Export
           <span>Exportar Mês (PDF)</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleExportWeek} className="flex items-center gap-2">
-          <CalendarWeek className="h-4 w-4" />
+          <View className="h-4 w-4" /> {/* Ícone corrigido aqui */}
           <span>Exportar Semana (PDF)</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleExportAgenda} className="flex items-center gap-2">
