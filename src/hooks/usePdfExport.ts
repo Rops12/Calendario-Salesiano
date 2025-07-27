@@ -6,28 +6,38 @@ import { ptBR } from 'date-fns/locale';
 import { CalendarEvent, EventCategory } from '@/types/calendar';
 import { useCategories } from '@/hooks/useCategories.tsx';
 
-// --- Constantes de Estilo para o PDF ---
+// --- Constantes de Estilo Otimizadas para o PDF ---
 const COLORS = {
   white: '#FFFFFF',
   black: '#000000',
-  lightGray: '#F3F4F6', // bg-gray-100
-  mediumGray: '#6B7280', // text-gray-500
-  darkGray: '#111827', // text-gray-900
-  headerBlue: '#4F46E5', // bg-[#4F46E5]
-  todayBlue: '#DBEAFE', // bg-blue-100
-  holidayRed: '#FEE2E2', // bg-red-100
-  recessOrange: '#FFEDD5', // bg-orange-100
+  lightGray: '#F9FAFB', // Cor de fundo para dias fora do mês (bg-gray-50)
+  mediumGray: '#9CA3AF', // Cor para textos de dias fora do mês (text-gray-400)
+  darkGray: '#374151', // Cor principal de texto (text-gray-700)
+  headerBlue: '#4F46E5', // Cor do cabeçalho principal
+  todayBlueBg: '#EFF6FF', // Fundo do dia atual (bg-blue-50)
+  todayBlueBorder: '#BFDBFE', // Borda do dia atual (border-blue-200)
+  holidayRedBg: '#FEF2F2', // Fundo de feriado (bg-red-50)
+  holidayRedBorder: '#FECACA', // Borda de feriado (border-red-200)
+  recessOrangeBg: '#FFF7ED', // Fundo de recesso (bg-orange-50)
+  recessOrangeBorder: '#FED7AA', // Borda de recesso (border-orange-200)
+  cardBorder: '#E5E7EB', // Borda padrão do card (border-gray-200)
 };
 
 const FONT_SIZES = {
-  title: 18,
+  title: 20,
   header: 10,
-  dayNumber: 9,
-  eventTitle: 7,
-  eventCategory: 6,
-  agendaTitle: 16,
+  dayNumber: 10,
+  eventTitle: 7.5,
+  agendaTitle: 18,
   agendaSubtitle: 12,
   agendaText: 10,
+};
+
+const LAYOUT = {
+  pageMargin: 30,
+  cardGap: 8,
+  cardRadius: 8,
+  eventRadius: 4,
 };
 
 export const usePdfExport = (
@@ -36,7 +46,7 @@ export const usePdfExport = (
 ) => {
   const { getCategory } = useCategories();
 
-  // --- Funções Auxiliares de Cor ---
+  // --- Funções Auxiliares de Cor (sem alterações) ---
   const hslToHex = (h: number, s: number, l: number): string => {
     l /= 100;
     const a = s * Math.min(l, 1 - l) / 100;
@@ -67,6 +77,7 @@ export const usePdfExport = (
       return '#d1d5db'; // Cor de fallback
   };
 
+  // --- Funções de Desenho ---
   const addHeader = (doc: jsPDF, title: string) => {
     doc.setFontSize(FONT_SIZES.title);
     doc.setTextColor(COLORS.headerBlue);
@@ -85,150 +96,152 @@ export const usePdfExport = (
     }).sort((a, b) => a.title.localeCompare(b.title));
   };
 
-  // --- LÓGICA DE EXPORTAÇÃO (MÊS) ---
+  // --- Otimização Visual: Exportação de Mês com Cards ---
   const exportMonthToPdf = (currentDate: Date) => {
     const doc = new jsPDF('p', 'pt', 'a4');
     const monthName = format(currentDate, 'MMMM yyyy', { locale: ptBR });
     addHeader(doc, monthName.charAt(0).toUpperCase() + monthName.slice(1));
-    generateMonthTable(doc, currentDate);
+    generateMonthAsCards(doc, currentDate);
     doc.save(`calendario-mensal-${format(currentDate, 'yyyy-MM')}.pdf`);
   };
 
-  const generateMonthTable = (doc: jsPDF, currentDate: Date) => {
+  const generateMonthAsCards = (doc: jsPDF, currentDate: Date) => {
     const daysOfWeek = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const contentWidth = pageWidth - (LAYOUT.pageMargin * 2);
+    const cardWidth = (contentWidth - (LAYOUT.cardGap * 6)) / 7;
+    const cardHeight = 100; // Altura fixa para cada card de dia
+    let y = 110; // Posição inicial Y abaixo dos cabeçalhos
+
+    // Desenha os cabeçalhos dos dias da semana
+    doc.setFontSize(FONT_SIZES.header);
+    doc.setTextColor(COLORS.darkGray);
+    doc.setFont('helvetica', 'bold');
+    daysOfWeek.forEach((day, i) => {
+        doc.text(day, LAYOUT.pageMargin + i * (cardWidth + LAYOUT.cardGap) + cardWidth / 2, y - 15, { align: 'center' });
+    });
+
     const monthWeeks = eachWeekOfInterval({
-      start: startOfMonth(currentDate),
-      end: new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
+        start: startOfMonth(currentDate),
+        end: new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
     }, { weekStartsOn: 0 });
 
-    const body = monthWeeks.map(weekStart => 
-      Array.from({ length: 7 }, (_, i) => {
-        const date = addDays(weekStart, i);
-        return {
-          date,
-          events: getFilteredEventsForDate(date),
-          isCurrentMonth: getMonth(date) === getMonth(currentDate)
-        };
-      })
-    );
+    monthWeeks.forEach(weekStart => {
+        let x = LAYOUT.pageMargin;
+        for (let i = 0; i < 7; i++) {
+            const date = addDays(weekStart, i);
+            const events = getFilteredEventsForDate(date);
+            const isCurrentMonth = getMonth(date) === getMonth(currentDate);
+            const today = new Date();
+            const isToday = format(date, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
+            
+            // Define cores do card
+            let bgColor = COLORS.white;
+            let borderColor = COLORS.cardBorder;
+            if (events.some(e => e.eventType === 'feriado')) {
+                bgColor = COLORS.holidayRedBg;
+                borderColor = COLORS.holidayRedBorder;
+            } else if (events.some(e => e.eventType === 'recesso')) {
+                bgColor = COLORS.recessOrangeBg;
+                borderColor = COLORS.recessOrangeBorder;
+            } else if (isToday) {
+                bgColor = COLORS.todayBlueBg;
+                borderColor = COLORS.todayBlueBorder;
+            } else if (!isCurrentMonth) {
+                bgColor = COLORS.lightGray;
+            }
 
-    autoTable(doc, {
-      startY: 80,
-      head: [daysOfWeek],
-      body: body,
-      theme: 'grid',
-      headStyles: { fillColor: COLORS.headerBlue, textColor: COLORS.white, fontStyle: 'bold', halign: 'center' },
-      styles: { cellPadding: 2, minCellHeight: 80, valign: 'top' },
-      didDrawCell: (data) => {
-        if (data.section === 'head') return;
-        
-        const dayData = data.cell.raw as { date: Date; events: CalendarEvent[]; isCurrentMonth: boolean };
-        if (!dayData?.date) return;
-        
-        const { date, events, isCurrentMonth } = dayData;
-        const dayNumber = format(date, 'd');
-        const today = new Date();
+            // Desenha o card do dia
+            doc.setDrawColor(borderColor);
+            doc.setFillColor(bgColor);
+            doc.roundedRect(x, y, cardWidth, cardHeight, LAYOUT.cardRadius, LAYOUT.cardRadius, 'FD');
 
-        // Estilo de fundo da célula
-        if (events.some(e => e.eventType === 'feriado')) doc.setFillColor(COLORS.holidayRed);
-        else if (events.some(e => e.eventType === 'recesso')) doc.setFillColor(COLORS.recessOrange);
-        else if (format(date, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')) doc.setFillColor(COLORS.todayBlue);
-        else if (!isCurrentMonth) doc.setFillColor(COLORS.lightGray);
-        else doc.setFillColor(COLORS.white);
-        doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F');
-        
-        // Número do dia
-        doc.setTextColor(isCurrentMonth ? COLORS.darkGray : COLORS.mediumGray);
-        doc.setFontSize(FONT_SIZES.dayNumber);
-        doc.text(dayNumber, data.cell.x + 4, data.cell.y + 10);
+            // Número do dia
+            doc.setTextColor(isCurrentMonth ? COLORS.darkGray : COLORS.mediumGray);
+            doc.setFontSize(FONT_SIZES.dayNumber);
+            doc.setFont('helvetica', 'bold');
+            doc.text(format(date, 'd'), x + 6, y + 12);
+            
+            // Eventos dentro do card
+            let eventY = y + 22;
+            const maxEvents = 4;
+            events.slice(0, maxEvents).forEach(event => {
+                if (eventY > y + cardHeight - 15) return;
+                
+                const color = getCategoryColorHex(event.category);
+                doc.setFillColor(color);
+                doc.setTextColor(COLORS.white);
+                doc.setFontSize(FONT_SIZES.eventTitle);
+                doc.setFont('helvetica', 'bold');
 
-        // Eventos
-        let eventY = data.cell.y + 18;
-        const eventX = data.cell.x + 3, eventWidth = data.cell.width - 6, eventHeight = 12, maxEvents = 4;
-        
-        events.slice(0, maxEvents).forEach(event => {
-          if (eventY + eventHeight > data.cell.y + data.cell.height - 5) return;
-          const category = getCategory(event.category);
-          const color = category ? getCategoryColorHex(category.value) : COLORS.mediumGray;
-          
-          doc.setDrawColor(color);
-          doc.setLineWidth(1.5);
-          doc.line(eventX, eventY, eventX, eventY + eventHeight);
+                const title = doc.splitTextToSize(event.title, cardWidth - 12);
+                const eventCardHeight = title.length * 10 + 4;
 
-          doc.setTextColor(COLORS.darkGray);
-          doc.setFontSize(FONT_SIZES.eventTitle);
-          doc.setFont('helvetica', 'bold');
+                doc.roundedRect(x + 4, eventY, cardWidth - 8, eventCardHeight, LAYOUT.eventRadius, LAYOUT.eventRadius, 'F');
+                doc.text(title, x + 6, eventY + 8);
+                
+                eventY += eventCardHeight + 3;
+            });
+            
+            if (events.length > maxEvents) {
+                doc.setTextColor(COLORS.mediumGray);
+                doc.setFontSize(7);
+                doc.text(`+${events.length - maxEvents} mais...`, x + 6, eventY + 8);
+            }
 
-          const truncatedTitle = doc.splitTextToSize(event.title, eventWidth - 8);
-          doc.text(truncatedTitle[0], eventX + 4, eventY + 8);
-          
-          eventY += eventHeight + 2;
-        });
-
-        if (events.length > maxEvents) {
-          doc.setTextColor(COLORS.mediumGray);
-          doc.setFontSize(7);
-          doc.text(`+${events.length - maxEvents} mais...`, eventX + 4, eventY + 8);
+            x += cardWidth + LAYOUT.cardGap;
         }
-      },
-      willDrawCell: (data) => {
-        if (data.section === 'body') data.cell.text = [];
-      }
+        y += cardHeight + LAYOUT.cardGap;
     });
   };
 
   // --- LÓGICA DE EXPORTAÇÃO (SEMANA) ---
   const exportWeekToPdf = (currentDate: Date) => {
-    const doc = new jsPDF('l', 'pt', 'a4'); // Paisagem para melhor visualização
+    const doc = new jsPDF('l', 'pt', 'a4'); // Paisagem
     const weekStart = startOfWeek(currentDate, { locale: ptBR });
     const weekEnd = endOfWeek(currentDate, { locale: ptBR });
     const weekTitle = `${format(weekStart, 'dd/MM')} - ${format(weekEnd, 'dd/MM/yyyy')}`;
     addHeader(doc, `Semana de ${weekTitle}`);
-    generateWeekTable(doc, currentDate);
-    doc.save(`calendario-semanal-${format(currentDate, 'yyyy-MM-dd')}.pdf`);
-  };
-
-  const generateWeekTable = (doc: jsPDF, currentDate: Date) => {
-    const weekStart = startOfWeek(currentDate, { locale: ptBR });
-    const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+    
+    // Usando autoTable para a estrutura da semana, pois é mais tabular
     const head = [weekDays.map(d => format(d, "EEEE, dd/MM", { locale: ptBR }))];
     const body = [weekDays.map(day => ({ date: day, events: getFilteredEventsForDate(day) }))];
-
     autoTable(doc, {
-      startY: 80,
-      head: head,
-      body: body,
-      theme: 'grid',
-      headStyles: { fillColor: COLORS.headerBlue, textColor: COLORS.white, fontStyle: 'bold', halign: 'center' },
-      styles: { cellPadding: 2, valign: 'top' },
-      didDrawCell: (data) => {
-        if (data.section === 'head') return;
-        const dayData = data.cell.raw as { date: Date; events: CalendarEvent[] };
-        if (!dayData?.date) return;
-        
-        let eventY = data.cell.y + 10;
-        dayData.events.forEach(event => {
-          const category = getCategory(event.category);
-          const color = category ? getCategoryColorHex(category.value) : COLORS.mediumGray;
-          
-          doc.setFillColor(color);
-          doc.circle(data.cell.x + 8, eventY + 3, 3, 'F');
-          
-          doc.setTextColor(COLORS.darkGray);
-          doc.setFontSize(FONT_SIZES.eventTitle);
-          const titleLines = doc.splitTextToSize(event.title, data.cell.width - 20);
-          doc.text(titleLines, data.cell.x + 15, eventY);
-          eventY += (titleLines.length * FONT_SIZES.eventTitle) + 4;
-        });
-      },
-      willDrawCell: (data) => {
-        if (data.section === 'body') data.cell.text = [];
-      }
+        startY: 80,
+        head: head,
+        body: body,
+        theme: 'grid',
+        headStyles: { fillColor: COLORS.headerBlue, textColor: COLORS.white, fontStyle: 'bold', halign: 'center' },
+        styles: { cellPadding: 4, valign: 'top', minCellHeight: doc.internal.pageSize.getHeight() - 100 },
+        didDrawCell: (data) => {
+            if (data.section === 'head') return;
+            const dayData = data.cell.raw as { date: Date; events: CalendarEvent[] };
+            if (!dayData?.date) return;
+            
+            let eventY = data.cell.y + 10;
+            dayData.events.forEach(event => {
+                const color = getCategoryColorHex(event.category);
+                doc.setFillColor(color);
+                doc.setTextColor(COLORS.white);
+                doc.setFontSize(FONT_SIZES.eventTitle);
+                
+                const titleLines = doc.splitTextToSize(event.title, data.cell.width - 12);
+                const eventCardHeight = titleLines.length * 10 + 6;
+
+                doc.roundedRect(data.cell.x + 4, eventY, data.cell.width - 8, eventCardHeight, LAYOUT.eventRadius, LAYOUT.eventRadius, 'F');
+                doc.text(titleLines, data.cell.x + 7, eventY + 9);
+                eventY += eventCardHeight + 5;
+            });
+        },
+        willDrawCell: (data) => { if (data.section === 'body') data.cell.text = []; }
     });
+    
+    doc.save(`calendario-semanal-${format(currentDate, 'yyyy-MM-dd')}.pdf`);
   };
 
   // --- LÓGICA DE EXPORTAÇÃO (AGENDA) ---
   const exportAgendaToPdf = (currentDate: Date) => {
+    // A lógica da agenda já é focada e visualmente clara, mantida como está.
     const doc = new jsPDF('p', 'pt', 'a4');
     const dayTitle = format(currentDate, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR });
     addHeader(doc, dayTitle.charAt(0).toUpperCase() + dayTitle.slice(1));
