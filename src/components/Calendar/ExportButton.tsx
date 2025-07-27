@@ -1,6 +1,6 @@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Download, CalendarDays, CalendarWeek, BookText } from 'lucide-react';
 import { usePdfExport } from '@/hooks/usePdfExport';
 import { CalendarEvent, EventCategory } from '@/types/calendar';
 
@@ -11,15 +11,18 @@ interface ExportButtonProps {
 }
 
 export function ExportButton({ currentDate, events, selectedCategories }: ExportButtonProps) {
-  const { exportMonthToPdf, exportFullYearToPdf } = usePdfExport(events, selectedCategories);
+  const { exportMonthToPdf, exportWeekToPdf, exportAgendaToPdf } = usePdfExport(events, selectedCategories);
 
   const handleExportMonth = () => {
     exportMonthToPdf(currentDate);
   };
 
-  const handleExportYear = () => {
-    const year = currentDate.getFullYear();
-    exportFullYearToPdf(year);
+  const handleExportWeek = () => {
+    exportWeekToPdf(currentDate);
+  };
+
+  const handleExportAgenda = () => {
+    exportAgendaToPdf(currentDate);
   };
 
   return (
@@ -35,11 +38,17 @@ export function ExportButton({ currentDate, events, selectedCategories }: Export
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={handleExportMonth}>
-          Exportar Mês Atual (PDF)
+        <DropdownMenuItem onClick={handleExportMonth} className="flex items-center gap-2">
+          <CalendarDays className="h-4 w-4" />
+          <span>Exportar Mês (PDF)</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleExportYear}>
-          Exportar Ano Completo (PDF)
+        <DropdownMenuItem onClick={handleExportWeek} className="flex items-center gap-2">
+          <CalendarWeek className="h-4 w-4" />
+          <span>Exportar Semana (PDF)</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleExportAgenda} className="flex items-center gap-2">
+          <BookText className="h-4 w-4" />
+          <span>Exportar Dia/Agenda (PDF)</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
