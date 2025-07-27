@@ -18,7 +18,7 @@ export const useAdmin = () => {
     id: authUser?.id || '',
     name: authUser?.email?.split('@')[0] || 'Usuário',
     email: authUser?.email || '',
-    role: authUser?.isAdmin ? 'admin' : 'viewer',
+    role: authUser?.isAdmin ? 'admin' : 'editor',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
