@@ -48,7 +48,7 @@ export const usePdfExport = (
 ) => {
   const { categories, getCategory } = useCategories();
 
-  // --- Funções Auxiliares de Cor (sem alterações) ---
+  // --- Funções Auxiliares de Cor ---
   const hslToHex = (h: number, s: number, l: number): string => {
     l /= 100;
     const a = s * Math.min(l, 1 - l) / 100;
@@ -89,8 +89,8 @@ export const usePdfExport = (
     doc.text(title, doc.internal.pageSize.getWidth() / 2, 60, { align: 'center' });
   };
   
-  const addLegend = (doc: jsPDF) => {
-    let y = doc.autoTable.previous.finalY + 30;
+  const addLegend = (doc: jsPDF, startY: number) => {
+    let y = startY + 20; // Espaçamento após o conteúdo principal
     if (y > doc.internal.pageSize.getHeight() - 100) {
       doc.addPage();
       y = LAYOUT.pageMargin;
@@ -100,7 +100,7 @@ export const usePdfExport = (
     doc.setTextColor(COLORS.darkGray);
     doc.setFont('helvetica', 'bold');
     doc.text("Legenda de Segmentos", LAYOUT.pageMargin, y);
-    y += 15;
+    y += 20;
 
     const activeCategories = categories.filter(cat => cat.isActive && selectedCategories.includes(cat.value));
     let x = LAYOUT.pageMargin;
@@ -183,14 +183,13 @@ export const usePdfExport = (
     }).sort((a, b) => a.title.localeCompare(b.title));
   };
 
-  // --- Otimização Visual: Exportação de Mês com Cards ---
   const exportMonthToPdf = (currentDate: Date) => {
     const doc = new jsPDF('p', 'pt', 'a4');
     const monthName = format(currentDate, 'MMMM yyyy', { locale: ptBR });
     addHeader(doc, monthName.charAt(0).toUpperCase() + monthName.slice(1));
-    const eventsForAgenda = generateMonthAsCards(doc, currentDate);
+    const { finalY, eventsForAgenda } = generateMonthAsCards(doc, currentDate);
 
-    addLegend(doc);
+    addLegend(doc, finalY);
 
     if (eventsForAgenda.some(day => day.events.length > 0)) {
         addDetailedAgenda(doc, eventsForAgenda);
@@ -199,7 +198,7 @@ export const usePdfExport = (
     doc.save(`calendario-mensal-${format(currentDate, 'yyyy-MM')}.pdf`);
   };
 
-  const generateMonthAsCards = (doc: jsPDF, currentDate: Date): { date: Date, events: CalendarEvent[] }[] => {
+  const generateMonthAsCards = (doc: jsPDF, currentDate: Date): { finalY: number, eventsForAgenda: { date: Date, events: CalendarEvent[] }[] } => {
     const daysOfWeek = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
     const pageWidth = doc.internal.pageSize.getWidth();
     const contentWidth = pageWidth - (LAYOUT.pageMargin * 2);
@@ -280,15 +279,106 @@ export const usePdfExport = (
         y += cardHeight + LAYOUT.cardGap;
     });
     
-    // Simula a posição final da tabela para a legenda poder ser adicionada depois
-    // @ts-ignore
-    doc.autoTable.previous = { finalY: y - LAYOUT.cardGap };
-    return allMonthEvents.sort((a, b) => a.date.getTime() - b.date.getTime());
+    return { finalY: y - LAYOUT.cardGap, eventsForAgenda: allMonthEvents.sort((a, b) => a.date.getTime() - b.date.getTime()) };
   };
 
-  // --- EXPORTAÇÃO (SEMANA E AGENDA) ---
-  const exportWeekToPdf = (currentDate: Date) => { /* ... implementação anterior ... */ };
-  const exportAgendaToPdf = (currentDate: Date) => { /* ... implementação anterior ... */ };
+  const exportWeekToPdf = (currentDate: Date) => {
+    const doc = new jsPDF('l', 'pt', 'a4'); // Paisagem
+    const weekStart = startOfWeek(currentDate, { locale: ptBR });
+    const weekEnd = endOfWeek(currentDate, { locale: ptBR });
+    const weekTitle = `${format(weekStart, 'dd/MM')} - ${format(weekEnd, 'dd/MM/yyyy')}`;
+    addHeader(doc, `Semana de ${weekTitle}`);
+    
+    const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+    const head = [weekDays.map(d => format(d, "EEEE, dd/MM", { locale: ptBR }))];
+    const body = [weekDays.map(day => ({ date: day, events: getFilteredEventsForDate(day) }))];
+
+    autoTable(doc, {
+        startY: 80,
+        head: head,
+        body: body,
+        theme: 'grid',
+        headStyles: { fillColor: COLORS.headerBlue, textColor: COLORS.white, fontStyle: 'bold', halign: 'center' },
+        styles: { cellPadding: 4, valign: 'top', minCellHeight: doc.internal.pageSize.getHeight() - 100 },
+        didDrawCell: (data) => {
+            if (data.section === 'head') return;
+            const dayData = data.cell.raw as { date: Date; events: CalendarEvent[] };
+            if (!dayData?.date) return;
+            
+            let eventY = data.cell.y + 10;
+            dayData.events.forEach(event => {
+                const color = getCategoryColorHex(event.category);
+                doc.setFillColor(color);
+                doc.setTextColor(COLORS.white);
+                doc.setFontSize(FONT_SIZES.eventTitle);
+                
+                const titleLines = doc.splitTextToSize(event.title, data.cell.width - 12);
+                const eventCardHeight = titleLines.length * 10 + 6;
+
+                doc.roundedRect(data.cell.x + 4, eventY, data.cell.width - 8, eventCardHeight, LAYOUT.eventRadius, LAYOUT.eventRadius, 'F');
+                doc.text(titleLines, data.cell.x + 7, eventY + 9);
+                eventY += eventCardHeight + 5;
+            });
+        },
+        willDrawCell: (data) => { if (data.section === 'body') data.cell.text = []; }
+    });
+    
+    doc.save(`calendario-semanal-${format(currentDate, 'yyyy-MM-dd')}.pdf`);
+  };
+
+  const exportAgendaToPdf = (currentDate: Date) => {
+    const doc = new jsPDF('p', 'pt', 'a4');
+    const dayTitle = format(currentDate, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+    addHeader(doc, dayTitle.charAt(0).toUpperCase() + dayTitle.slice(1));
+    
+    const events = getFilteredEventsForDate(currentDate);
+    let y = 100;
+
+    if (events.length === 0) {
+      doc.setFontSize(FONT_SIZES.agendaText);
+      doc.setTextColor(COLORS.mediumGray);
+      doc.text("Nenhum evento para este dia.", doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+    } else {
+      events.forEach(event => {
+        if (y > doc.internal.pageSize.getHeight() - 60) {
+          doc.addPage();
+          y = 40;
+        }
+
+        const category = getCategory(event.category);
+        const color = category ? getCategoryColorHex(category.value) : COLORS.mediumGray;
+        
+        doc.setFillColor(color);
+        doc.rect(40, y, 5, 20, 'F');
+
+        doc.setFontSize(FONT_SIZES.agendaTitle);
+        doc.setTextColor(COLORS.darkGray);
+        doc.setFont('helvetica', 'bold');
+        doc.text(event.title, 55, y + 14);
+        
+        doc.setFontSize(FONT_SIZES.agendaText);
+        doc.setTextColor(COLORS.mediumGray);
+        doc.setFont('helvetica', 'normal');
+        
+        let eventMeta = `Categoria: ${category?.label || event.category}`;
+        if (event.eventType !== 'normal') {
+          eventMeta += ` (${event.eventType})`;
+        }
+        doc.text(eventMeta, 55, y + 28);
+        y += 35;
+        
+        if (event.description) {
+          const descLines = doc.splitTextToSize(event.description, doc.internal.pageSize.getWidth() - 100);
+          doc.text(descLines, 55, y);
+          y += (descLines.length * FONT_SIZES.agendaText) + 15;
+        }
+
+        y += 10;
+      });
+    }
+
+    doc.save(`agenda-${format(currentDate, 'yyyy-MM-dd')}.pdf`);
+  };
 
   return { exportMonthToPdf, exportWeekToPdf, exportAgendaToPdf };
 };
