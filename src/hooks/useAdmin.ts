@@ -1,7 +1,6 @@
 // src/hooks/useAdmin.ts
 import { useState, useEffect } from 'react';
 import { AdminUser, ActivityLog, CategoryConfig } from '@/types/admin';
-import { User } from '@/services/interfaces/IAuthService';
 import { useAuth } from './useAuth';
 import { SupabaseAdminService } from '@/services/supabase/SupabaseAdminService';
 
@@ -14,20 +13,14 @@ export const useAdmin = () => {
   
   const adminService = new SupabaseAdminService();
   
-  const currentUser: AdminUser = {
-    id: authUser?.id || '',
-    name: authUser?.email?.split('@')[0] || 'Usuário',
-    email: authUser?.email || '',
-    role: authUser?.isAdmin ? 'admin' : 'editor',
+  const currentUser: AdminUser | null = authUser ? {
+    id: authUser.id,
+    name: authUser.name || authUser.email.split('@')[0],
+    email: authUser.email,
+    role: authUser.role || 'editor',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
-  };
-
-  useEffect(() => {
-    if (authUser?.isAdmin) {
-      loadAdminData();
-    }
-  }, [authUser]);
+  } : null;
 
   const loadAdminData = async () => {
     try {
@@ -47,12 +40,18 @@ export const useAdmin = () => {
       setIsLoading(false);
     }
   };
+  
+  useEffect(() => {
+    if (authUser?.isAdmin) {
+      loadAdminData();
+    }
+  }, [authUser]);
 
   const addUser = async (userData: Omit<AdminUser, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!currentUser) throw new Error("Usuário não autenticado");
     try {
       const newUser = await adminService.addUser(userData);
       setUsers(prev => [newUser, ...prev]);
-      
       await addLog({
         userId: currentUser.id,
         userName: currentUser.email,
@@ -68,6 +67,7 @@ export const useAdmin = () => {
   };
 
   const updateUser = async (id: string, userData: Partial<AdminUser>) => {
+    if (!currentUser) throw new Error("Usuário não autenticado");
     try {
       await adminService.updateUser(id, userData);
       setUsers(prev => prev.map(user => 
@@ -75,7 +75,6 @@ export const useAdmin = () => {
           ? { ...user, ...userData, updatedAt: new Date().toISOString() }
           : user
       ));
-      
       const user = users.find(u => u.id === id);
       if (user) {
         await addLog({
@@ -94,11 +93,11 @@ export const useAdmin = () => {
   };
 
   const deleteUser = async (id: string) => {
+    if (!currentUser) throw new Error("Usuário não autenticado");
     try {
       const user = users.find(u => u.id === id);
       await adminService.deleteUser(id);
       setUsers(prev => prev.filter(user => user.id !== id));
-      
       if (user) {
         await addLog({
           userId: currentUser.id,
@@ -116,6 +115,7 @@ export const useAdmin = () => {
   };
 
   const sendPasswordReset = async (email: string) => {
+    if (!currentUser) throw new Error("Usuário não autenticado");
     try {
       await adminService.sendPasswordResetEmail(email);
       await addLog({
@@ -133,10 +133,11 @@ export const useAdmin = () => {
   };
 
   const addCategory = async (categoryData: Omit<CategoryConfig, 'isActive'>) => {
+    if (!currentUser) throw new Error("Usuário não autenticado");
     try {
+      const newCategory = { ...categoryData, isActive: true };
       await adminService.addCategory(categoryData);
-      await loadAdminData(); // CORREÇÃO AQUI
-      
+      setCategories(prev => [...prev, newCategory]); // Atualização otimista
       await addLog({
         userId: currentUser.id,
         userName: currentUser.email,
@@ -147,14 +148,15 @@ export const useAdmin = () => {
       });
     } catch (error) {
       console.error('Error adding category:', error);
+      loadAdminData(); // Recarrega em caso de erro
     }
   };
 
   const updateCategory = async (value: string, categoryData: Partial<CategoryConfig>) => {
+    if (!currentUser) throw new Error("Usuário não autenticado");
     try {
+      setCategories(prev => prev.map(cat => cat.value === value ? { ...cat, ...categoryData } : cat)); // Atualização otimista
       await adminService.updateCategory(value, categoryData);
-      await loadAdminData(); // CORREÇÃO AQUI
-      
       const category = categories.find(c => c.value === value);
       if (category) {
         await addLog({
@@ -168,15 +170,16 @@ export const useAdmin = () => {
       }
     } catch (error) {
       console.error('Error updating category:', error);
+      loadAdminData(); // Recarrega em caso de erro
     }
   };
 
   const deleteCategory = async (value: string) => {
+    if (!currentUser) throw new Error("Usuário não autenticado");
     try {
       const category = categories.find(c => c.value === value);
+      setCategories(prev => prev.filter(cat => cat.value !== value)); // Atualização otimista
       await adminService.deleteCategory(value);
-      await loadAdminData(); // CORREÇÃO AQUI
-      
       if (category) {
         await addLog({
           userId: currentUser.id,
@@ -189,6 +192,7 @@ export const useAdmin = () => {
       }
     } catch (error) {
       console.error('Error deleting category:', error);
+      loadAdminData(); // Recarrega em caso de erro
     }
   };
 
@@ -207,7 +211,7 @@ export const useAdmin = () => {
   };
 
   const isAdmin = authUser?.isAdmin || false;
-  const canEdit = authUser?.isAdmin || (authUser as any)?.role === 'editor' || false;
+  const canEdit = authUser?.isAdmin || authUser?.role === 'editor' || false;
 
   return {
     users,
