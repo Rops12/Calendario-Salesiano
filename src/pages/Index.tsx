@@ -19,11 +19,13 @@ import { CalendarSkeleton } from '@/components/Calendar/CalendarSkeleton';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { DayEventModal } from '@/components/Calendar/DayEventModal';
 import { useCategories } from '@/hooks/useCategories.tsx';
+import { useAuth } from '@/hooks/useAuth';
 
 const Index = () => {
   const navigate = useNavigate();
   const params = useParams();
   const { categories } = useCategories();
+  const { isAuthenticated } = useAuth();
 
   const [currentDate, setCurrentDate] = useState(() => {
     const dateParam = params.date;
@@ -72,7 +74,8 @@ const Index = () => {
   const [selectedDateForModal, setSelectedDateForModal] = useState<Date | null>(null);
 
   const { events, isLoading, createEvent, updateEvent, deleteEvent } = useCalendarEvents();
-  const { isAdmin, canEdit } = useAdmin();
+  const { isAdmin, canEdit: userCanEdit } = useAdmin();
+  const canEdit = isAuthenticated && userCanEdit;
   const { toast } = useToast();
 
   useEffect(() => {
@@ -204,7 +207,7 @@ const Index = () => {
     if (isInitialLoad) return <CalendarSkeleton />;
     const viewProps = { currentDate, events: filteredEvents, selectedCategories, onEventClick: handleEventClick };
     switch (currentView) {
-      case 'month': return <CalendarGrid {...viewProps} onDateClick={handleDateClickForModal} onAddNewEvent={handleNewEvent} onEventDrop={canEdit ? handleEventDrop : undefined} />;
+      case 'month': return <CalendarGrid {...viewProps} onDateClick={handleDateClickForModal} onAddNewEvent={canEdit ? handleNewEvent : undefined} onEventDrop={canEdit ? handleEventDrop : undefined} />;
       case 'week': return <WeekView {...viewProps} onDateClick={canEdit ? handleDateClickForModal : undefined} />;
       case 'agenda': return <AgendaView {...viewProps} onNewEventClick={canEdit ? handleNewEvent : undefined} />;
       default: return null;
