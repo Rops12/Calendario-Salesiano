@@ -31,9 +31,19 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
+  // A lógica de redirecionamento pode ser removida se a página Index
+  // for lidar com os dois casos (logado e não logado).
+  // Se você mantiver rotas que são estritamente para usuários logados,
+  // o redirecionamento ainda é útil.
+  // if (!isAuthenticated && !isLoading) {
+  //     // Em vez de redirecionar, a página Index agora vai renderizar
+  //     // o modo de apenas leitura.
+  // }
+  
   if (!isAuthenticated) {
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
+
 
   return <>{children}</>;
 }
