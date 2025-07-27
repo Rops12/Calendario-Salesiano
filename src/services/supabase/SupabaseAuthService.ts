@@ -1,3 +1,4 @@
+// src/services/supabase/SupabaseAuthService.ts
 import { supabase } from '@/integrations/supabase/client';
 import { IAuthService, User, LoginCredentials } from '../interfaces/IAuthService';
 
@@ -9,18 +10,24 @@ export class SupabaseAuthService implements IAuthService {
       return null;
     }
 
-    // Buscar perfil do usuário
     const { data: profile } = await supabase
       .from('profiles')
-      .select('*')
+      .select('id, email, is_admin, role, name') // Adicionado 'name'
       .eq('id', session.user.id)
       .single();
 
+    if (!profile) {
+      // Se o perfil não existir por algum motivo, desloga o usuário para evitar estado inconsistente.
+      await this.logout();
+      return null;
+    }
+
     return {
-      id: session.user.id,
-      email: session.user.email || '',
-      isAdmin: profile?.is_admin || false,
-      role: profile?.role as 'admin' | 'editor' | undefined
+      id: profile.id,
+      email: profile.email || '',
+      name: profile.name || profile.email?.split('@')[0] || 'Usuário', // Adicionado 'name'
+      isAdmin: profile.is_admin || false,
+      role: profile.role as 'admin' | 'editor' | undefined
     };
   }
 
@@ -30,49 +37,30 @@ export class SupabaseAuthService implements IAuthService {
       password: credentials.password
     });
 
-    if (error) {
+    if (error || !data.user) {
       console.error('Login error:', error);
-      throw new Error('Credenciais inválidas');
+      throw new Error('Credenciais inválidas.');
     }
 
-    if (!data.user) {
-      throw new Error('Erro no login');
-    }
-
-    // Buscar perfil do usuário
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('*')
+      .select('id, email, is_admin, role, name') // Adicionado 'name'
       .eq('id', data.user.id)
       .single();
 
-    if (profileError) {
-      console.error('Profile error:', profileError);
-      // Se não encontrar perfil, criar um
-      const { data: newProfile } = await supabase
-        .from('profiles')
-        .insert({
-          id: data.user.id,
-          email: data.user.email,
-          is_admin: false,
-          role: 'editor' // Novo padrão
-        })
-        .select()
-        .single();
-      
-      return {
-        id: data.user.id,
-        email: data.user.email || '',
-        isAdmin: newProfile?.is_admin || false,
-        role: newProfile?.role as 'admin' | 'editor' | undefined
-      };
+    if (profileError || !profile) {
+      console.error('Profile fetch error after login:', profileError);
+      // Força o logout se o perfil não for encontrado, pois o gatilho deveria tê-lo criado.
+      await this.logout();
+      throw new Error('Erro ao buscar perfil do usuário. Tente novamente.');
     }
 
     return {
-      id: data.user.id,
-      email: data.user.email || '',
-      isAdmin: profile?.is_admin || false,
-      role: profile?.role as 'admin' | 'editor' | undefined
+      id: profile.id,
+      email: profile.email || '',
+      name: profile.name || profile.email?.split('@')[0] || 'Usuário', // Adicionado 'name'
+      isAdmin: profile.is_admin || false,
+      role: profile.role as 'admin' | 'editor' | undefined
     };
   }
 
@@ -82,31 +70,5 @@ export class SupabaseAuthService implements IAuthService {
       console.error('Logout error:', error);
       throw new Error('Erro ao fazer logout');
     }
-  }
-
-  async signUp(email: string, password: string): Promise<User> {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`
-      }
-    });
-
-    if (error) {
-      console.error('SignUp error:', error);
-      throw new Error('Erro ao criar conta');
-    }
-
-    if (!data.user) {
-      throw new Error('Erro ao criar usuário');
-    }
-
-    return {
-      id: data.user.id,
-      email: data.user.email || '',
-      isAdmin: false,
-      role: 'editor'
-    };
   }
 }
