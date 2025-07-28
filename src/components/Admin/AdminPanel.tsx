@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 // ==================================================================
 // CORREÇÃO APLICADA AQUI: Usando caminhos absolutos com o alias '@'
 // ==================================================================
-import { CategoryManager } from "@/components/Admin/CategoryManagement.tsx";
+import { CategoryManagement } from "@/components/Admin/CategoryManagement.tsx"; // Corrected import
 import { UserManager } from "@/components/Admin/UserManagement.tsx";
 
 interface AdminPanelProps {
@@ -26,7 +26,7 @@ export function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
         <div className="flex-grow overflow-y-auto pr-4 -mr-4 space-y-8 py-4">
           <div>
             <h3 className="text-lg font-medium mb-4">Gerenciar Categorias</h3>
-            <CategoryManager />
+            <CategoryManagement /> {/* Corrected component name */}
           </div>
           <div>
             <h3 className="text-lg font-medium mb-4">Gerenciar Usuários</h3>
