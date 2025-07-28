@@ -1,8 +1,11 @@
 // src/components/Admin/AdminPanel.tsx
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CategoryManager } from "./CategoryManager.tsx";
-import { UserManager } from "./UserManager.tsx";
+// ==================================================================
+// CORREÇÃO APLICADA AQUI: Usando caminhos absolutos com o alias '@'
+// ==================================================================
+import { CategoryManager } from "@/components/Admin/CategoryManager.tsx";
+import { UserManager } from "@/components/Admin/UserManager.tsx";
 
 interface AdminPanelProps {
   isOpen: boolean;
