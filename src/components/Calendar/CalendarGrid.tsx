@@ -64,12 +64,12 @@ export function CalendarGrid({
 
   const getDayCardStyles = (date: Date, eventType: string | null) => {
     const baseClasses = "relative group flex flex-col p-3 rounded-xl shadow-sm transition-all duration-300 cursor-pointer min-h-[10rem]";
-    // --- ANIMAÇÃO DE HOVER RESTAURADA AQUI ---
     const hoverClasses = "hover:shadow-xl hover:-translate-y-1";
     
-    if (!isCurrentMonth(date)) {
-      return cn(baseClasses, "bg-gray-50 text-gray-400", hoverClasses);
-    }
+    // Removido o estilo para dias de outro mês para que eles possam ser ocultados.
+    // if (!isCurrentMonth(date)) {
+    //   return cn(baseClasses, "bg-gray-50 text-gray-400", hoverClasses);
+    // }
     if (eventType === 'feriado') {
       return cn(baseClasses, "bg-red-50 text-red-800", hoverClasses, "hover:bg-red-100");
     }
@@ -77,7 +77,6 @@ export function CalendarGrid({
       return cn(baseClasses, "bg-yellow-50 text-yellow-800", hoverClasses, "hover:bg-yellow-100");
     }
     return cn(baseClasses, "bg-white", hoverClasses, "hover:bg-gray-50");
-    // --- FIM DA ANIMAÇÃO DE HOVER ---
   };
 
   const handleDragEnd = (result: DropResult) => {
@@ -102,6 +101,20 @@ export function CalendarGrid({
               const dayEvents = getEventsForDate(date);
               const dateStr = format(date, 'yyyy-MM-dd');
               const specialEventType = getSpecialEventType(date);
+
+              // Adiciona uma classe 'hidden' se não for o mês atual para ocultar
+              // ou renderiza o conteúdo condicionalmente.
+              // A abordagem de renderização condicional do conteúdo é mais limpa.
+              if (!isCurrentMonth(date)) {
+                return (
+                  <div
+                    key={index}
+                    className={cn(getDayCardStyles(date, specialEventType), "bg-gray-100 opacity-50 cursor-default")} // Estilo para dias fora do mês atual
+                  >
+                    {/* Conteúdo vazio ou placeholder para dias fora do mês */}
+                  </div>
+                );
+              }
 
               return (
                 <Droppable droppableId={`day-${dateStr}`} key={index}>
