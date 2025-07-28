@@ -1,4 +1,3 @@
-// src/pages/Index.tsx
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { format, parse, isValid } from 'date-fns';
@@ -13,32 +12,27 @@ import { AdminPanel } from '@/components/Admin/AdminPanel';
 import { CalendarView } from '@/components/Calendar/ViewSwitcher';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import { useAdmin } from '@/hooks/useAdmin';
-import { CalendarEvent, EventFormData } from '@/types/calendar';
+import { CalendarEvent } from '@/types/calendar';
 import { useToast } from '@/hooks/use-toast.tsx';
 import { CalendarSkeleton } from '@/components/Calendar/CalendarSkeleton';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { DayEventModal } from '@/components/Calendar/DayEventModal';
 import { useCategories } from '@/hooks/useCategories.tsx';
 import { useAuth } from '@/hooks/useAuth';
 
-// Definição da ordem hierárquica das categorias
-const categoryOrder: { [key: string]: number } = {
-  'geral': 1,
-  'feriado': 2,
-  'recesso': 3,
-  'evento': 4,
-  'infantil': 10,
-  'fundamental1': 11,
-  'fundamental2': 12,
-  'medio': 13,
-  'pastoral': 20,
-  'esportes': 21,
-  'biblioteca': 22,
-  'robotica': 23,
-  'nap': 24,
-};
+// --- INÍCIO DAS NOVAS IMPORTAÇÕES ---
+import * as FloatingPanel from '@/components/ui/floating-panel';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+import { EventCard } from '@/components/Calendar/EventCard';
+// --- FIM DAS NOVAS IMPORTAÇÕES ---
 
+const categoryOrder: { [key: string]: number } = {
+  'geral': 1, 'feriado': 2, 'recesso': 3, 'evento': 4, 'infantil': 10,
+  'fundamental1': 11, 'fundamental2': 12, 'medio': 13, 'pastoral': 20,
+  'esportes': 21, 'biblioteca': 22, 'robotica': 23, 'nap': 24,
+};
 const getCategoryOrder = (category: string) => categoryOrder[category] || 99;
+
 
 const Index = () => {
   const navigate = useNavigate();
@@ -50,36 +44,20 @@ const Index = () => {
     const dateParam = params.date;
     if (dateParam) {
       const parsedDate = parse(dateParam, 'yyyy-MM-dd', new Date());
-      if (isValid(parsedDate)) {
-        return parsedDate;
-      }
+      if (isValid(parsedDate)) return parsedDate;
     }
     return new Date();
   });
 
-  const [currentView, setCurrentView] = useState<CalendarView>(() => {
-    const viewParam = params.view as CalendarView;
-    if (['month', 'week', 'agenda'].includes(viewParam)) {
-      return viewParam;
-    }
-    return 'month';
-  });
-
+  const [currentView, setCurrentView] = useState<CalendarView>('month');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   
   useEffect(() => {
-    if (categories.length > 0) {
-      const saved = localStorage.getItem('selectedCategories');
-      if (saved) {
-        const savedParsed = JSON.parse(saved);
-        const activeCategoryValues = categories.filter(c => c.isActive).map(c => c.value);
-        setSelectedCategories(savedParsed.filter((val: string) => activeCategoryValues.includes(val)));
-      } else {
-        setSelectedCategories(categories.filter(c => c.isActive).map(c => c.value));
-      }
+    if (categories.length > 0 && selectedCategories.length === 0) {
+      setSelectedCategories(categories.filter(c => c.isActive).map(c => c.value));
     }
   }, [categories]);
-  
+
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -89,116 +67,113 @@ const Index = () => {
   const [isCommandOpen, setIsCommandOpen] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState<'next' | 'prev' | null>(null);
 
-  const [isDayModalOpen, setIsDayModalOpen] = useState(false);
-  const [selectedDateForModal, setSelectedDateForModal] = useState<Date | null>(null);
-
   const { events, isLoading, createEvent, updateEvent, deleteEvent } = useCalendarEvents();
   const { isAdmin, canEdit: userCanEdit } = useAdmin();
   const canEdit = isAuthenticated && userCanEdit;
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!isLoading && isInitialLoad) {
-      setIsInitialLoad(false);
-    }
-  }, [isLoading, isInitialLoad]);
+    setIsInitialLoad(isLoading);
+  }, [isLoading]);
 
   useEffect(() => {
-    const formattedDate = format(currentDate, 'yyyy-MM-dd');
-    if (params.view !== currentView || params.date !== formattedDate) {
-      navigate(`/${currentView}/${formattedDate}`, { replace: true });
+    const dateParam = params.date;
+    const newDate = dateParam ? parse(dateParam, 'yyyy-MM-dd', new Date()) : new Date();
+    if (isValid(newDate)) {
+      setCurrentDate(newDate);
     }
-  }, [currentDate, currentView, navigate, params.view, params.date]);
+  }, [params.date]);
 
   useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault();
         setIsCommandOpen((open) => !open);
       }
     };
-    document.addEventListener('keydown', down);
-    return () => document.removeEventListener('keydown', down);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
-  
-  useEffect(() => {
-    if (selectedCategories.length > 0) {
-        localStorage.setItem('selectedCategories', JSON.stringify(selectedCategories));
-    }
-  }, [selectedCategories]);
 
-  useEffect(() => {
-    if (transitionDirection) {
-      const timer = setTimeout(() => setTransitionDirection(null), 300);
-      return () => clearTimeout(timer);
-    }
-  }, [transitionDirection]);
-
-  const handleNavigate = (direction: 'prev' | 'next' | 'today') => {
-    if (direction !== 'today') setTransitionDirection(direction);
-    if (direction === 'today') {
-      setCurrentDate(new Date());
-      return;
-    }
+  const handleNavigate = (direction: 'next' | 'prev') => {
+    setTransitionDirection(direction);
     const newDate = new Date(currentDate);
-    switch (currentView) {
-      case 'month': newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1), 1); break;
-      case 'week': newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7)); break;
-      case 'agenda': newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1)); break;
-    }
-    setCurrentDate(newDate);
+    const offset = direction === 'next' ? 1 : -1;
+    if (currentView === 'month') newDate.setMonth(newDate.getMonth() + offset);
+    else if (currentView === 'week') newDate.setDate(newDate.getDate() + (7 * offset));
+    else newDate.setDate(newDate.getDate() + offset);
+    navigate(`/date/${format(newDate, 'yyyy-MM-dd')}`);
   };
 
-  const handleDateSelect = (date: Date | undefined) => {
-    if (date) setCurrentDate(date);
-  };
-
-  const handleToggleCategory = (categoryValue: string) => {
-    setSelectedCategories(prev => 
-      prev.includes(categoryValue) 
-        ? prev.filter(c => c !== categoryValue)
-        : [...prev, categoryValue]
-    );
-  };
-
-  const handleNewEvent = (date?: Date) => {
-    setSelectedEvent(null);
-    setSelectedDate(date || new Date());
-    setIsModalOpen(true);
+  const handleDateSelect = (date: Date) => {
+    navigate(`/date/${format(date, 'yyyy-MM-dd')}`);
   };
 
   const handleEventClick = (event: CalendarEvent) => {
     setSelectedEvent(event);
-    setSelectedDate(undefined);
+    setIsModalOpen(true);
+  };
+  
+  const handleNewEvent = (date?: Date) => {
+    setSelectedEvent(null);
+    setSelectedDate(date || currentDate);
     setIsModalOpen(true);
   };
 
-  const handleDateClickForModal = (date: Date) => {
-    setSelectedDateForModal(date);
-    setIsDayModalOpen(true);
-  };
-
-  const handleSaveEvent = (data: EventFormData) => {
-    if (!canEdit) return;
-    if (selectedEvent) {
-      updateEvent(selectedEvent.id, data);
-    } else {
-      createEvent(data);
+  const handleSaveEvent = async (formData: any) => {
+    const eventData: CalendarEvent = {
+        id: formData.id,
+        title: formData.title,
+        start: formData.start,
+        end: formData.end,
+        description: formData.description,
+        category: formData.category,
+        allDay: formData.allDay,
+    };
+    try {
+        if (eventData.id) {
+            await updateEvent(eventData);
+            toast({ title: 'Sucesso', description: 'Evento atualizado com sucesso!' });
+        } else {
+            await createEvent(eventData);
+            toast({ title: 'Sucesso', description: 'Evento criado com sucesso!' });
+        }
+        setIsModalOpen(false);
+    } catch (error) {
+        toast({ title: 'Erro', description: 'Não foi possível salvar o evento.', variant: 'destructive' });
     }
   };
 
-  const handleDeleteEvent = (id: string) => {
-    if (!canEdit) return;
-    deleteEvent(id);
+  const handleDeleteEvent = async (id: string) => {
+      try {
+          await deleteEvent(id);
+          toast({ title: 'Sucesso', description: 'Evento excluído com sucesso!' });
+          setIsModalOpen(false);
+      } catch (error) {
+          toast({ title: 'Erro', description: 'Não foi possível excluir o evento.', variant: 'destructive' });
+      }
   };
 
-  const handleEventDrop = (eventId: string, newDate: string) => {
-    if (!canEdit) return;
+  const handleEventDrop = async (eventId: string, newDateStr: string) => {
     const event = events.find(e => e.id === eventId);
     if (event) {
-      updateEvent(eventId, { ...event, startDate: newDate });
-      toast({ title: "Evento reagendado", description: "O evento foi movido com sucesso." });
+        const newStartDate = new Date(newDateStr);
+        const newEndDate = event.end ? new Date(newStartDate.getTime() + (new Date(event.end).getTime() - new Date(event.start).getTime())) : newStartDate;
+        
+        await handleSaveEvent({
+            ...event,
+            start: newStartDate.toISOString(),
+            end: newEndDate.toISOString(),
+        });
     }
+  };
+  
+  const handleToggleCategory = (categoryValue: string) => {
+    setSelectedCategories(prev =>
+      prev.includes(categoryValue)
+        ? prev.filter(c => c !== categoryValue)
+        : [...prev, categoryValue]
+    );
   };
 
   const filteredEvents = useMemo(() => events.filter(event =>
@@ -208,92 +183,104 @@ const Index = () => {
   ).sort((a, b) => {
     const orderA = getCategoryOrder(a.category);
     const orderB = getCategoryOrder(b.category);
-    if (orderA !== orderB) {
-      return orderA - orderB;
-    }
+    if (orderA !== orderB) return orderA - orderB;
     return a.title.localeCompare(b.title);
   }), [events, searchQuery, selectedCategories]);
-
-  const dailyEventsForModal = useMemo(() => {
-    if (!selectedDateForModal) return [];
-    const dateStr = format(selectedDateForModal, 'yyyy-MM-dd');
-    return filteredEvents.filter(event => {
-        const eventStartDate = event.startDate.split('T')[0];
-        const eventEndDate = event.endDate ? event.endDate.split('T')[0] : eventStartDate;
-        return dateStr >= eventStartDate && dateStr <= eventEndDate;
-    });
-  }, [selectedDateForModal, filteredEvents]);
+  
+  const runCommand = (command: () => void) => {
+    setIsCommandOpen(false);
+    command();
+  };
 
   const animationClass = 
     transitionDirection === 'next' ? 'animate-[slide-in-from-right_0.3s_ease-out]' :
     transitionDirection === 'prev' ? 'animate-[slide-in-from-left_0.3s_ease-out]' :
     'animate-fade-in';
-    
+
   const renderView = () => {
     if (isInitialLoad) return <CalendarSkeleton />;
     const viewProps = { currentDate, events: filteredEvents, selectedCategories, onEventClick: handleEventClick };
     switch (currentView) {
-      case 'month': return <CalendarGrid {...viewProps} onDateClick={handleDateClickForModal} onAddNewEvent={canEdit ? handleNewEvent : undefined} onEventDrop={canEdit ? handleEventDrop : undefined} />;
-      case 'week': return <WeekView {...viewProps} onDateClick={canEdit ? handleDateClickForModal : undefined} />;
+      case 'month': return <CalendarGrid {...viewProps} onAddNewEvent={canEdit ? handleNewEvent : undefined} onEventDrop={canEdit ? handleEventDrop : undefined} events={filteredEvents} />;
+      case 'week': return <WeekView {...viewProps} />;
       case 'agenda': return <AgendaView {...viewProps} onNewEventClick={canEdit ? handleNewEvent : undefined} />;
       default: return null;
     }
   };
 
-  const runCommand = (command: () => void) => {
-    command();
-    setIsCommandOpen(false);
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <CalendarHeader
-        currentDate={currentDate} onNavigate={handleNavigate} onDateSelect={handleDateSelect}
-        onNewEvent={canEdit ? handleNewEvent : undefined} onSearch={setSearchQuery} searchQuery={searchQuery}
-        currentView={currentView} onViewChange={setCurrentView} events={filteredEvents}
-        selectedCategories={selectedCategories} onAdminPanelOpen={() => setIsAdminPanelOpen(true)} isAdmin={isAdmin}
-      />
-      <CategoryFilters selectedCategories={selectedCategories} onToggleCategory={handleToggleCategory} />
-      <div><div key={currentDate.getTime()} className={animationClass}>{renderView()}</div></div>
+    <FloatingPanel.Root>
+      <div className="min-h-screen bg-gray-50">
+        <CalendarHeader
+          currentDate={currentDate} onNavigate={handleNavigate} onDateSelect={handleDateSelect}
+          onNewEvent={canEdit ? handleNewEvent : undefined} onSearch={setSearchQuery} searchQuery={searchQuery}
+          currentView={currentView} onViewChange={setCurrentView} events={filteredEvents}
+          selectedCategories={selectedCategories} onAdminPanelOpen={() => setIsAdminPanelOpen(true)} isAdmin={isAdmin}
+        />
+        <CategoryFilters selectedCategories={selectedCategories} onToggleCategory={handleToggleCategory} />
+        <div><div key={currentDate.getTime()} className={animationClass}>{renderView()}</div></div>
 
-      <DayEventModal
-        isOpen={isDayModalOpen}
-        onClose={() => setIsDayModalOpen(false)}
-        date={selectedDateForModal}
-        events={dailyEventsForModal}
-        onAddNewEvent={handleNewEvent}
-        onEventClick={handleEventClick}
-        categories={categories.filter(c => c.isActive)}
-        canEdit={!!canEdit}
-      />
+        <CommandDialog open={isCommandOpen} onOpenChange={setIsCommandOpen}>
+          <CommandInput placeholder="Digite um comando ou pesquise..." />
+          <CommandList>
+            <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
+            <CommandGroup heading="Eventos">
+              {filteredEvents.map(event => (
+                <CommandItem key={event.id} onSelect={() => runCommand(() => handleEventClick(event))}>
+                  {event.title}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </CommandDialog>
 
-      <CommandDialog open={isCommandOpen} onOpenChange={setIsCommandOpen}>
-        <CommandInput placeholder="Digite um comando ou pesquise..." />
-        <CommandList>
-          <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
-          <CommandGroup heading="Navegação">
-            <CommandItem onSelect={() => runCommand(() => handleNavigate('today'))}>Ir para Hoje</CommandItem>
-            <CommandItem onSelect={() => runCommand(() => handleNavigate('next'))}>Próximo Período</CommandItem>
-            <CommandItem onSelect={() => runCommand(() => handleNavigate('prev'))}>Período Anterior</CommandItem>
-          </CommandGroup>
-          <CommandGroup heading="Visualização">
-            <CommandItem onSelect={() => runCommand(() => setCurrentView('month'))}>Mudar para Mês</CommandItem>
-            <CommandItem onSelect={() => runCommand(() => setCurrentView('week'))}>Mudar para Semana</CommandItem>
-            <CommandItem onSelect={() => runCommand(() => setCurrentView('agenda'))}>Mudar para Agenda</CommandItem>
-          </CommandGroup>
-          {canEdit && (<CommandGroup heading="Ações"><CommandItem onSelect={() => runCommand(() => handleNewEvent())}>Novo Evento</CommandItem></CommandGroup>)}
-        </CommandList>
-      </CommandDialog>
+        <EventModal
+          isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}
+          onSave={canEdit ? handleSaveEvent : undefined}
+          onDelete={canEdit ? handleDeleteEvent : undefined}
+          event={selectedEvent} selectedDate={selectedDate}
+          categories={categories.filter(c => c.isActive)}
+        />
+        
+        {isAdmin && <AdminPanel isOpen={isAdminPanelOpen} onClose={() => setIsAdminPanelOpen(false)} />}
+      </div>
 
-      <EventModal
-        isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}
-        onSave={canEdit ? handleSaveEvent : undefined}
-        onDelete={canEdit ? handleDeleteEvent : undefined}
-        event={selectedEvent} selectedDate={selectedDate}
-        categories={categories.filter(c => c.isActive)}
-      />
-      <AdminPanel isOpen={isAdminPanelOpen} onClose={() => setIsAdminPanelOpen(false)} />
-    </div>
+      <FloatingPanel.Content>
+        {({ activeDate, activeEvents }) =>
+          activeDate && (
+            <div className="flex flex-col h-full bg-background">
+              <div className="p-4 border-b">
+                <h3 className="font-semibold">{format(activeDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}</h3>
+                <p className="text-sm text-muted-foreground">{activeEvents.length} evento(s) encontrado(s).</p>
+              </div>
+              <div className="py-4 px-4 space-y-3 flex-grow overflow-y-auto">
+                {activeEvents.length > 0 ? (
+                  activeEvents.map(event => (
+                    <EventCard 
+                      key={event.id}
+                      event={event}
+                      onClick={() => handleEventClick(event)}
+                      className="transition-all hover:scale-[1.02] hover:shadow-lg"
+                    />
+                  ))
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center">
+                    <p className="text-muted-foreground text-center py-8">Nenhum evento para este dia.</p>
+                  </div>
+                )}
+              </div>
+              {canEdit && (
+                <div className="p-4 border-t mt-auto">
+                  <Button onClick={() => handleNewEvent(activeDate)} className="w-full">
+                    <Plus className="h-4 w-4 mr-2" /> Adicionar Evento
+                  </Button>
+                </div>
+              )}
+            </div>
+          )
+        }
+      </FloatingPanel.Content>
+    </FloatingPanel.Root>
   );
 };
 
