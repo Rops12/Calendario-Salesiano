@@ -1,14 +1,16 @@
-// src/pages/Index.tsx
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Calendar } from '@/components/Calendar';
-import { Header } from '@/components/Header';
 import { EventModal } from '@/components/Calendar/EventModal';
 import { DayEventModal } from '@/components/Calendar/DayEventModal';
-import { useEvents } from '@/hooks/useEvents';
-import { useCategories } from '@/hooks/useCategories';
+import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import { useAuth } from '@/hooks/useAuth';
 import { CalendarEvent } from '@/types/calendar';
-import { format } from 'date-fns';
+import { format, startOfMonth } from 'date-fns';
+import { CategoryConfig } from '@/types/admin';
+import { useCategories } from '@/hooks/useCategories';
+import { Header } from '@/components/Header';
+import { useToast } from '@/components/ui/use-toast';
 
 // Hierarquia de prioridade das categorias
 const categoryOrder: { [key: string]: number } = {
@@ -31,17 +33,60 @@ const categoryOrder: { [key: string]: number } = {
 const getCategoryOrder = (category: string) => categoryOrder[category] || 99;
 
 export default function Index() {
-  const { user, canEdit } = useAuth();
-  const { events, addEvent, updateEvent, deleteEvent } = useEvents();
-  const { categories } = useCategories();
+  const { user, canEdit, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
   
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const { 
+    events, 
+    loading: eventsLoading, 
+    addEvent: addEventHandler, 
+    updateEvent: updateEventHandler, 
+    deleteEvent: deleteEventHandler 
+  } = useCalendarEvents(currentMonth);
+  
+  const { categories, loading: categoriesLoading } = useCategories();
+
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [selectedDateForModal, setSelectedDateForModal] = useState<Date | null>(null);
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/login');
+    }
+  }, [user, authLoading, navigate]);
+  
+  const handleEventOperation = async (operation: Promise<any>, successMessage: string, errorMessage: string) => {
+    try {
+      await operation;
+      toast({
+        title: "Sucesso!",
+        description: successMessage,
+      });
+    } catch (error) {
+      console.error(errorMessage, error);
+      toast({
+        title: "Erro",
+        description: `${errorMessage}. Tente novamente.`,
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const addEvent = (event: Omit<CalendarEvent, 'id'>) => 
+    handleEventOperation(addEventHandler(event), "Evento adicionado com sucesso.", "Falha ao adicionar evento");
+
+  const updateEvent = (event: CalendarEvent) => 
+    handleEventOperation(updateEventHandler(event), "Evento atualizado com sucesso.", "Falha ao atualizar evento");
+
+  const deleteEvent = (eventId: string) => 
+    handleEventOperation(deleteEventHandler(eventId), "Evento deletado com sucesso.", "Falha ao deletar evento");
 
   const filteredEvents = useMemo(() => {
     return events.filter(event => {
@@ -57,9 +102,9 @@ export default function Index() {
     
     return filteredEvents
       .filter(event => {
-          const eventStartDate = event.startDate.split('T')[0];
-          const eventEndDate = event.endDate ? event.endDate.split('T')[0] : eventStartDate;
-          return dateStr >= eventStartDate && dateStr <= eventEndDate;
+        const eventStartDate = event.startDate.split('T')[0];
+        const eventEndDate = event.endDate ? event.endDate.split('T')[0] : eventStartDate;
+        return dateStr >= eventStartDate && dateStr <= eventEndDate;
       })
       .sort((a, b) => {
         // 1. Ordena pela prioridade da categoria
@@ -83,11 +128,13 @@ export default function Index() {
   };
   
   const handleAddNewEvent = (date?: Date) => {
+    if (!canEdit) return;
+    const defaultDate = date || new Date();
     setSelectedEvent({
-      id: '',
+      id: '', // ID vazio para um novo evento
       title: '',
-      startDate: date ? format(date, 'yyyy-MM-dd HH:mm:ss') : format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
-      endDate: date ? format(date, 'yyyy-MM-dd HH:mm:ss') : format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+      startDate: format(defaultDate, "yyyy-MM-dd'T'HH:mm:ss"),
+      endDate: format(defaultDate, "yyyy-MM-dd'T'HH:mm:ss"),
       category: categories[0]?.id || '',
       description: '',
       location: '',
@@ -98,8 +145,16 @@ export default function Index() {
   const closeModal = () => {
     setIsEventModalOpen(false);
     setSelectedEvent(null);
-    setSelectedDateForModal(null);
+    if (selectedDateForModal) {
+      setSelectedDateForModal(null);
+    }
   };
+
+  const isLoading = authLoading || eventsLoading || categoriesLoading;
+
+  if (isLoading) {
+    return <div>Carregando...</div>;
+  }
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
@@ -112,24 +167,28 @@ export default function Index() {
         canEdit={canEdit}
         currentMonth={currentMonth}
         onMonthChange={setCurrentMonth}
+        events={filteredEvents}
       />
-      <main className="flex-1 overflow-auto p-4">
+      <main className="flex-1 overflow-auto p-4" id="calendar-main">
         <Calendar 
           events={filteredEvents} 
           onEventClick={handleEventClick}
           onDayClick={handleDayClick}
-          categories={categories}
+          categories={categories as CategoryConfig[]}
           currentMonth={currentMonth}
+          onEventUpdate={updateEvent}
+          canEdit={canEdit}
         />
       </main>
       {isEventModalOpen && (
         <EventModal
           isOpen={isEventModalOpen}
           onClose={closeModal}
-          event={selectedEvent}
+          eventData={selectedEvent}
           onSave={selectedEvent?.id ? updateEvent : addEvent}
           onDelete={deleteEvent}
-          categories={categories}
+          categories={categories as CategoryConfig[]}
+          canEdit={canEdit}
         />
       )}
       {selectedDateForModal && (
@@ -138,7 +197,7 @@ export default function Index() {
           onClose={closeModal}
           date={selectedDateForModal}
           events={dailyEventsForModal}
-          categories={categories}
+          categories={categories as CategoryConfig[]}
           onEventClick={handleEventClick}
           onAddNewEvent={handleAddNewEvent}
           canEdit={canEdit}
