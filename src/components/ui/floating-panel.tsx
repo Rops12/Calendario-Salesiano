@@ -29,8 +29,8 @@ interface FloatingPanelContextType {
   activeEvents: CalendarEvent[]
   title: string
   setTitle: (title: string) => void
-  note: string // Adicionado para manter a estrutura original do formulário
-  setNote: (note: string) => void // Adicionado para manter a estrutura original do formulário
+  note: string
+  setNote: (note: string) => void
 }
 
 const FloatingPanelContext = createContext<
@@ -55,7 +55,7 @@ function useFloatingPanelLogic() {
   const [title, setTitle] = useState("")
   const [activeDate, setActiveDate] = useState<Date | null>(null)
   const [activeEvents, setActiveEvents] = useState<CalendarEvent[]>([])
-  const [note, setNote] = useState("") // Adicionado para o formulário
+  const [note, setNote] = useState("")
 
   const openFloatingPanel = (
     rect: DOMRect,
@@ -70,7 +70,7 @@ function useFloatingPanelLogic() {
 
   const closeFloatingPanel = () => {
     setIsOpen(false)
-    setNote("") // Limpa o estado do formulário ao fechar
+    setNote("")
   }
 
   return {
@@ -145,14 +145,10 @@ export function FloatingPanelContent({
     return () => document.removeEventListener("keydown", handleKeyDown)
   }, [closeFloatingPanel])
 
-  // --- CORREÇÃO AQUI ---
-  // Simplificamos as variantes para uma animação de fade e scale que funciona corretamente
-  // com o posicionamento fixo do painel.
   const variants = {
     hidden: { opacity: 0, scale: 0.95, y: 10 },
     visible: { opacity: 1, scale: 1, y: 0 },
   };
-  // --- FIM DA CORREÇÃO ---
 
   return (
     <AnimatePresence>
@@ -169,7 +165,8 @@ export function FloatingPanelContent({
             ref={contentRef}
             className={cn(
               "fixed z-50 overflow-hidden border border-zinc-950/10 bg-background shadow-lg outline-none dark:border-zinc-50/10 dark:bg-zinc-800",
-              "bottom-4 right-4 top-auto left-auto w-[400px] max-h-[80vh] rounded-2xl",
+              // --- POSICIONAMENTO CORRIGIDO PARA O CENTRO ---
+              "left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%] w-[450px] max-h-[80vh] rounded-2xl",
               className
             )}
             initial="hidden"
@@ -187,11 +184,6 @@ export function FloatingPanelContent({
     </AnimatePresence>
   )
 }
-
-
-// =================================================================//
-// == O RESTANTE DO CÓDIGO ORIGINAL FOI RESTAURADO ABAIXO           ==//
-// =================================================================//
 
 interface FloatingPanelHeaderProps {
   children: React.ReactNode
@@ -282,7 +274,6 @@ export function FloatingPanelCloseButton({
   )
 }
 
-// Exportando todos os componentes para uso
 export {
   FloatingPanelRoot as Root,
   FloatingPanelContent as Content,
