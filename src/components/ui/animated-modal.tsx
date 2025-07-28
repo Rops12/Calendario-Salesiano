@@ -1,9 +1,28 @@
 // src/components/ui/animated-modal.tsx
-import React, { useRef, useState } from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
+import React, { useRef, useState, useMemo, forwardRef } from 'react';
+import *d Dialog from '@radix-ui/react-dialog';
 import { motion, AnimatePresence } from 'motion/react';
-import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// Hook auxiliar para mesclar múltiplas refs em um único elemento
+function useMergeRefs<T>(...refs: (React.Ref<T> | undefined)[]) {
+  return useMemo(() => {
+    if (refs.every((ref) => ref == null)) {
+      return null;
+    }
+    return (node: T) => {
+      for (const ref of refs) {
+        if (ref) {
+          if (typeof ref === 'function') {
+            ref(node);
+          } else {
+            (ref as React.MutableRefObject<T>).current = node;
+          }
+        }
+      }
+    };
+  }, [refs]);
+}
 
 interface AnimatedModalProps {
   trigger: React.ReactNode;
@@ -19,7 +38,7 @@ export const AnimatedModal: React.FC<AnimatedModalProps> = ({
   onOpenChange,
 }) => {
   const [open, setOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = useRef<HTMLElement>(null);
   const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null);
 
   const handleOpenChange = (isOpen: boolean) => {
@@ -32,10 +51,15 @@ export const AnimatedModal: React.FC<AnimatedModalProps> = ({
     }
   };
 
+  // Extrai a ref original do trigger, se houver
+  const originalTriggerRef = (trigger as any)?.ref;
+  // Mescla a ref do modal com a ref original do trigger
+  const mergedTriggerRef = useMergeRefs(triggerRef, originalTriggerRef);
+
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Trigger asChild>
-        {React.cloneElement(trigger as React.ReactElement, { ref: triggerRef })}
+        {React.cloneElement(trigger as React.ReactElement, { ref: mergedTriggerRef })}
       </Dialog.Trigger>
 
       <AnimatePresence>
