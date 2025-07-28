@@ -1,11 +1,8 @@
 // src/components/Admin/AdminPanel.tsx
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-// ==================================================================
-// CORREÇÃO APLICADA AQUI: Usando caminhos absolutos com o alias '@'
-// ==================================================================
-import { CategoryManagement } from "@/components/Admin/CategoryManagement.tsx"; // Corrected import
-import { UserManager } from "@/components/Admin/UserManagement.tsx";
+import { CategoryManagement } from "@/components/Admin/CategoryManagement.tsx"; 
+import { UserManagement } from "@/components/Admin/UserManagement.tsx"; // Corrected import
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -26,11 +23,11 @@ export function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
         <div className="flex-grow overflow-y-auto pr-4 -mr-4 space-y-8 py-4">
           <div>
             <h3 className="text-lg font-medium mb-4">Gerenciar Categorias</h3>
-            <CategoryManagement /> {/* Corrected component name */}
+            <CategoryManagement />
           </div>
           <div>
             <h3 className="text-lg font-medium mb-4">Gerenciar Usuários</h3>
-            <UserManager />
+            <UserManagement /> {/* Corrected component name */}
           </div>
         </div>
 
