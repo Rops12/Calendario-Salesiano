@@ -44,14 +44,11 @@ export function CalendarGrid({
   const isToday = (date: Date) => isSameDay(date, new Date());
   const isCurrentMonth = (date: Date) => isSameMonth(date, currentDate);
   
-  // --- CORREÇÃO AQUI ---
-  // Trocado event.start por event.startDate para corresponder à estrutura de dados
   const getEventsForDate = (date: Date) => {
     return events.filter(event => 
       isSameDay(new Date(event.startDate), date)
     );
   };
-  // --- FIM DA CORREÇÃO ---
 
   const getSpecialEventType = (date: Date) => {
     const dayEvents = getEventsForDate(date);
@@ -134,7 +131,8 @@ export function CalendarGrid({
                         {date.getDate()}
                       </div>
 
-                      <div className="space-y-1 overflow-y-auto flex-grow">
+                      {/* --- BARRA DE ROLAGEM REMOVIDA DAQUI --- */}
+                      <div className="space-y-1">
                         {dayEvents.slice(0, 3).map((event, eventIndex) => (
                           <DraggableEvent
                             key={event.id}
