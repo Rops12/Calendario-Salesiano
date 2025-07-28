@@ -1,21 +1,9 @@
 // src/components/Calendar/EventCard.tsx
 
 import { cn } from "@/lib/utils";
-import { useCalendar } from "@/hooks/useCalendar";
-import { CalendarEvent } from "@/lib/calendarEvents";
+import { useCategories } from "@/hooks/useCategories"; // CORRIGIDO
+import { CalendarEvent } from "@/types/calendar"; // CORRIGIDO
 import { Star } from "lucide-react";
-
-// Função auxiliar para converter HEX para uma string RGB "R G B"
-function hexToRgb(hex: string): string | null {
-  // Expande o formato de 3 dígitos (ex: "03F") para 6 dígitos (ex: "0033FF")
-  const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-  hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
-
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result
-    ? `${parseInt(result[1], 16)} ${parseInt(result[2], 16)} ${parseInt(result[3], 16)}`
-    : null;
-}
 
 interface EventCardProps {
   event: CalendarEvent;
@@ -24,24 +12,24 @@ interface EventCardProps {
 }
 
 export function EventCard({ event, onClick, className }: EventCardProps) {
-  const { categories } = useCalendar();
-  const categoryInfo = categories.find((c) => c.id === event.categoryId);
+  const { getCategory } = useCategories(); // CORRIGIDO: Usando o hook correto
+  const categoryInfo = getCategory(event.category); // CORRIGIDO: Buscando a categoria pelo valor
 
   const safeCategoryInfo = categoryInfo || {
-    id: "default",
+    value: "default",
     label: "Sem categoria",
-    color: "#A8A29E", // Cor principal (ex: stone-400)
-    textColor: "#FAFAF9", // Cor do texto para contraste (ex: stone-50)
+    color: "hsl(220, 13%, 69%)", // Cor cinza (stone-400) como fallback
+    isActive: true,
   };
+  
+  // Extrai os valores numéricos do HSL para usar com transparência
+  const hslColorValue = safeCategoryInfo.color.match(/\d+/g)?.join(" ") || "220 13% 69%";
 
-  // Converte a cor principal para RGB para usarmos com transparência
-  const rgbColor = hexToRgb(safeCategoryInfo.color);
-
-  // Define as cores como variáveis CSS para serem usadas pelo Tailwind
+  // Define as variáveis CSS para serem usadas pelo Tailwind
   const cardStyle = {
-    '--category-color-rgb': rgbColor,
-    '--category-color': safeCategoryInfo.color,
-    '--category-text-color': safeCategoryInfo.textColor,
+    '--category-color-hsl': hslColorValue,
+    '--category-color': `hsl(${hslColorValue})`,
+    '--category-text-color': '#FFFFFF', // Texto de contraste (branco)
   } as React.CSSProperties;
 
   const getEventCardClasses = () => {
@@ -56,7 +44,7 @@ export function EventCard({ event, onClick, className }: EventCardProps) {
     return cn(
       baseStyles,
       "border-[var(--category-color)]", // Borda com a cor principal
-      "bg-[rgba(var(--category-color-rgb),0.15)]", // Fundo claro (cor principal com 15% de opacidade)
+      "bg-[hsl(var(--category-color-hsl),0.15)]", // Fundo claro (cor com 15% de opacidade)
       "hover:bg-[var(--category-color)]" // No hover, fundo com a cor principal sólida
     );
   };
