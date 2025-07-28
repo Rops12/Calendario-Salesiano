@@ -6,7 +6,7 @@ import { CategoryConfig } from '@/types/admin';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Plus } from 'lucide-react';
-import { EventCard } from './EventCard'; // Importando o EventCard
+import { EventCard } from './EventCard';
 
 interface DayEventModalProps {
   isOpen: boolean;
@@ -31,14 +31,18 @@ export function DayEventModal({ isOpen, onClose, onAddNewEvent, onEventClick, da
         </DialogHeader>
         {/* Adicionado px-1 para evitar a barra de rolagem horizontal no hover */}
         <div className="py-4 px-1 space-y-3 max-h-[60vh] overflow-y-auto">
-          {events.length > 0 ? events.map(event => (
-            <EventCard 
-              key={event.id}
-              event={event}
-              onClick={() => { onEventClick(event); onClose(); }}
-              className="hover:scale-[1.02] hover:shadow-medium"
-            />
-          )) : <p className="text-muted-foreground text-center py-8">Nenhum evento para este dia.</p>}
+          {events.length > 0 ? (
+            events.map(event => (
+              <EventCard 
+                key={event.id}
+                event={event}
+                onClick={() => { onEventClick(event); onClose(); }}
+                className="hover:scale-[1.02] hover:shadow-medium"
+              />
+            ))
+          ) : (
+            <p className="text-muted-foreground text-center py-8">Nenhum evento para este dia.</p>
+          )}
         </div>
         {canEdit && (
           <Button onClick={() => { onAddNewEvent(date); onClose(); }} className="w-full">
