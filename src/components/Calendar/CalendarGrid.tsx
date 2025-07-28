@@ -63,13 +63,12 @@ export function CalendarGrid({
   };
 
   const getDayCardStyles = (date: Date, eventType: string | null) => {
-    const baseClasses = "relative group flex flex-col p-3 rounded-xl shadow-sm transition-all duration-300 cursor-pointer min-h-[10rem]";
+    const baseClasses = "relative group flex flex-col p-3 rounded-xl shadow-sm transition-all duration-300 min-h-[10rem]"; // Removido cursor-pointer
     const hoverClasses = "hover:shadow-xl hover:-translate-y-1";
     
-    // Removido o estilo para dias de outro mês para que eles possam ser ocultados.
-    // if (!isCurrentMonth(date)) {
-    //   return cn(baseClasses, "bg-gray-50 text-gray-400", hoverClasses);
-    // }
+    // O estilo para dias de outro mês foi removido na iteração anterior,
+    // e agora trataremos a interatividade diretamente na renderização.
+    
     if (eventType === 'feriado') {
       return cn(baseClasses, "bg-red-50 text-red-800", hoverClasses, "hover:bg-red-100");
     }
@@ -101,75 +100,75 @@ export function CalendarGrid({
               const dayEvents = getEventsForDate(date);
               const dateStr = format(date, 'yyyy-MM-dd');
               const specialEventType = getSpecialEventType(date);
-
-              // Adiciona uma classe 'hidden' se não for o mês atual para ocultar
-              // ou renderiza o conteúdo condicionalmente.
-              // A abordagem de renderização condicional do conteúdo é mais limpa.
-              if (!isCurrentMonth(date)) {
-                return (
-                  <div
-                    key={index}
-                    className={cn(getDayCardStyles(date, specialEventType), "bg-gray-100 opacity-50 cursor-default")} // Estilo para dias fora do mês atual
-                  >
-                    {/* Conteúdo vazio ou placeholder para dias fora do mês */}
-                  </div>
-                );
-              }
+              
+              // Verifica se é o mês atual para renderizar o conteúdo interativo
+              const isInteractable = isCurrentMonth(date);
 
               return (
-                <Droppable droppableId={`day-${dateStr}`} key={index}>
+                <Droppable droppableId={`day-${dateStr}`} key={index} isDropDisabled={!isInteractable}>
                   {(provided) => (
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className={getDayCardStyles(date, specialEventType)}
-                      onClick={(e) => {
-                        openFloatingPanel(e.currentTarget.getBoundingClientRect(), date, dayEvents);
-                      }}
-                    >
-                      {onAddNewEvent && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute top-2 right-2 h-7 w-7 rounded-full opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 bg-background/60 backdrop-blur-sm shadow-sm hover:bg-gray-100"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onAddNewEvent(date);
-                          }}
-                          aria-label="Adicionar novo evento"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
+                      className={cn(
+                        getDayCardStyles(date, specialEventType),
+                        isInteractable ? "cursor-pointer" : "bg-gray-100 opacity-50 cursor-default pointer-events-none" // Adicionado pointer-events-none
                       )}
+                      onClick={isInteractable ? (e) => { // Só permite clique se for interativo
+                        openFloatingPanel(e.currentTarget.getBoundingClientRect(), date, dayEvents);
+                      } : undefined}
+                    >
+                      {isInteractable ? ( // Renderiza o conteúdo apenas se for interativo
+                        <>
+                          {onAddNewEvent && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="absolute top-2 right-2 h-7 w-7 rounded-full opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 bg-background/60 backdrop-blur-sm shadow-sm hover:bg-gray-100"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onAddNewEvent(date);
+                              }}
+                              aria-label="Adicionar novo evento"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          )}
 
-                      <div className={cn(
-                        "flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold mb-3 transition-all duration-300",
-                        isToday(date) && "bg-blue-600 text-white shadow-lg",
-                        !isToday(date) && isCurrentMonth(date) && "text-gray-800",
-                        !isCurrentMonth(date) && "text-gray-400"
-                      )}>
-                        {date.getDate()}
-                      </div>
-
-                      <div className="space-y-1">
-                        {dayEvents.slice(0, 3).map((event, eventIndex) => (
-                          <DraggableEvent
-                            key={event.id}
-                            event={event}
-                            index={eventIndex}
-                            onClick={onEventClick}
-                            isDraggable={!!onEventDrop}
-                          />
-                        ))}
-
-                        {dayEvents.length > 3 && (
-                          <div className="text-xs text-gray-500 font-medium px-2 py-1 bg-gray-100 dark:bg-zinc-700 rounded-md mt-1">
-                            +{dayEvents.length - 3} mais
+                          <div className={cn(
+                            "flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold mb-3 transition-all duration-300",
+                            isToday(date) && "bg-blue-600 text-white shadow-lg",
+                            "text-gray-800" // Sempre mostra a cor do texto padrão para o mês atual
+                          )}>
+                            {date.getDate()}
                           </div>
-                        )}
 
-                        {provided.placeholder}
-                      </div>
+                          <div className="space-y-1">
+                            {dayEvents.slice(0, 3).map((event, eventIndex) => (
+                              <DraggableEvent
+                                key={event.id}
+                                event={event}
+                                index={eventIndex}
+                                onClick={onEventClick}
+                                isDraggable={isInteractable && !!onEventDrop} // Só arrastável se for interativo
+                              />
+                            ))}
+
+                            {dayEvents.length > 3 && (
+                              <div className="text-xs text-gray-500 font-medium px-2 py-1 bg-gray-100 dark:bg-zinc-700 rounded-md mt-1">
+                                +{dayEvents.length - 3} mais
+                              </div>
+                            )}
+
+                            {provided.placeholder}
+                          </div>
+                        </>
+                      ) : (
+                        // Conteúdo vazio para dias fora do mês atual
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold mb-3 text-gray-400">
+                          {date.getDate()}
+                        </div>
+                      )}
                     </div>
                   )}
                 </Droppable>
