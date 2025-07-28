@@ -39,16 +39,16 @@
     --radius: 0.75rem;
 
     /* Cores das categorias de eventos */
-    --category-geral: 221 83% 53%;        
-    --category-infantil: 45 86% 62%;     
-    --category-fundamental1: 142 71% 45%; 
-    --category-fundamental2: 188 94% 42%; 
-    --category-medio: 262 83% 58%;       
-    --category-pastoral: 330 81% 60%;     
-    --category-esportes: 25 95% 53%;      
-    --category-robotica: 239 84% 67%;     
-    --category-biblioteca: 158 64% 52%;   
-    --category-nap: 351 83% 61%;          
+    --category-geral: 221 50% 70%;        
+    --category-infantil: 45 55% 70%;     
+    --category-fundamental1: 142 50% 65%; 
+    --category-fundamental2: 188 50% 65%; 
+    --category-medio: 262 50% 70%;       
+    --category-pastoral: 330 50% 70%;     
+    --category-esportes: 25 55% 68%;      
+    --category-robotica: 239 50% 70%;     
+    --category-biblioteca: 158 45% 65%;   
+    --category-nap: 351 50% 70%;          
     
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(239, 68%, 73%));
 
