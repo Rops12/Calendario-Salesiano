@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 // CORREÇÃO APLICADA AQUI: Usando caminhos absolutos com o alias '@'
 // ==================================================================
 import { CategoryManager } from "@/components/Admin/CategoryManagement.tsx";
-import { UserManager } from "@/components/Admin/UserManager.tsx";
+import { UserManager } from "@/components/Admin/UserManagement.tsx";
 
 interface AdminPanelProps {
   isOpen: boolean;
