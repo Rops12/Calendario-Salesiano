@@ -21,9 +21,7 @@ import { DayEventModal } from '@/components/Calendar/DayEventModal';
 import { useCategories } from '@/hooks/useCategories.tsx';
 import { useAuth } from '@/hooks/useAuth';
 
-// ==================================================================
-// ALTERAÇÃO 1: Definição da ordem hierárquica das categorias
-// ==================================================================
+// Definição da ordem hierárquica das categorias
 const categoryOrder: { [key: string]: number } = {
   'geral': 1,
   'feriado': 2,
@@ -41,7 +39,6 @@ const categoryOrder: { [key: string]: number } = {
 };
 
 const getCategoryOrder = (category: string) => categoryOrder[category] || 99;
-
 
 const Index = () => {
   const navigate = useNavigate();
@@ -208,7 +205,14 @@ const Index = () => {
     (event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (event.description && event.description.toLowerCase().includes(searchQuery.toLowerCase()))) &&
     selectedCategories.includes(event.category)
-  ), [events, searchQuery, selectedCategories]);
+  ).sort((a, b) => {
+    const orderA = getCategoryOrder(a.category);
+    const orderB = getCategoryOrder(b.category);
+    if (orderA !== orderB) {
+      return orderA - orderB;
+    }
+    return a.title.localeCompare(b.title);
+  }), [events, searchQuery, selectedCategories]);
 
   const dailyEventsForModal = useMemo(() => {
     if (!selectedDateForModal) return [];
@@ -217,17 +221,6 @@ const Index = () => {
         const eventStartDate = event.startDate.split('T')[0];
         const eventEndDate = event.endDate ? event.endDate.split('T')[0] : eventStartDate;
         return dateStr >= eventStartDate && dateStr <= eventEndDate;
-    })
-    // ==================================================================
-    // ALTERAÇÃO 2: Lógica de ordenação hierárquica aplicada
-    // ==================================================================
-    .sort((a, b) => {
-      const orderA = getCategoryOrder(a.category);
-      const orderB = getCategoryOrder(b.category);
-      if (orderA !== orderB) {
-        return orderA - orderB;
-      }
-      return a.title.localeCompare(b.title);
     });
   }, [selectedDateForModal, filteredEvents]);
 
