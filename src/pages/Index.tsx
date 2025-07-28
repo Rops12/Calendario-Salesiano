@@ -1,3 +1,4 @@
+// src/pages/Index.tsx
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar } from '@/components/Calendar';
@@ -9,7 +10,7 @@ import { CalendarEvent } from '@/types/calendar';
 import { format, startOfMonth } from 'date-fns';
 import { CategoryConfig } from '@/types/admin';
 import { useCategories } from '@/hooks/useCategories';
-import { Header } from '@/components/Header';
+import { Header } from '@/components/Header.tsx'; // <<-- CORREÇÃO APLICADA AQUI
 import { useToast } from '@/components/ui/use-toast';
 
 // Hierarquia de prioridade das categorias
