@@ -12,19 +12,17 @@ import { AdminPanel } from '@/components/Admin/AdminPanel';
 import { CalendarView } from '@/components/Calendar/ViewSwitcher';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import { useAdmin } from '@/hooks/useAdmin';
-import { CalendarEvent } from '@/types/calendar';
+import { CalendarEvent, EventFormData } from '@/types/calendar';
 import { useToast } from '@/hooks/use-toast.tsx';
 import { CalendarSkeleton } from '@/components/Calendar/CalendarSkeleton';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useCategories } from '@/hooks/useCategories.tsx';
 import { useAuth } from '@/hooks/useAuth';
 
-// --- INÍCIO DAS NOVAS IMPORTAÇÕES ---
 import * as FloatingPanel from '@/components/ui/floating-panel';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { EventCard } from '@/components/Calendar/EventCard';
-// --- FIM DAS NOVAS IMPORTAÇÕES ---
 
 const categoryOrder: { [key: string]: number } = {
   'geral': 1, 'feriado': 2, 'recesso': 3, 'evento': 4, 'infantil': 10,
@@ -120,22 +118,15 @@ const Index = () => {
     setIsModalOpen(true);
   };
 
-  const handleSaveEvent = async (formData: any) => {
-    const eventData: CalendarEvent = {
-        id: formData.id,
-        title: formData.title,
-        start: formData.start,
-        end: formData.end,
-        description: formData.description,
-        category: formData.category,
-        allDay: formData.allDay,
-    };
+  // --- CORREÇÃO AQUI ---
+  // Ajustado para usar `startDate` e `endDate` de acordo com a tipagem `EventFormData`
+  const handleSaveEvent = async (formData: EventFormData & { id?: string }) => {
     try {
-        if (eventData.id) {
-            await updateEvent(eventData);
+        if (formData.id) {
+            await updateEvent(formData.id, formData);
             toast({ title: 'Sucesso', description: 'Evento atualizado com sucesso!' });
         } else {
-            await createEvent(eventData);
+            await createEvent(formData);
             toast({ title: 'Sucesso', description: 'Evento criado com sucesso!' });
         }
         setIsModalOpen(false);
@@ -143,6 +134,7 @@ const Index = () => {
         toast({ title: 'Erro', description: 'Não foi possível salvar o evento.', variant: 'destructive' });
     }
   };
+  // --- FIM DA CORREÇÃO ---
 
   const handleDeleteEvent = async (id: string) => {
       try {
@@ -154,19 +146,26 @@ const Index = () => {
       }
   };
 
+  // --- CORREÇÃO AQUI ---
+  // Ajustado para usar `startDate` e `endDate`
   const handleEventDrop = async (eventId: string, newDateStr: string) => {
     const event = events.find(e => e.id === eventId);
     if (event) {
         const newStartDate = new Date(newDateStr);
-        const newEndDate = event.end ? new Date(newStartDate.getTime() + (new Date(event.end).getTime() - new Date(event.start).getTime())) : newStartDate;
+        const oldStartDate = new Date(event.startDate);
+        const oldEndDate = event.endDate ? new Date(event.endDate) : oldStartDate;
+        
+        const duration = oldEndDate.getTime() - oldStartDate.getTime();
+        const newEndDate = new Date(newStartDate.getTime() + duration);
         
         await handleSaveEvent({
             ...event,
-            start: newStartDate.toISOString(),
-            end: newEndDate.toISOString(),
+            startDate: newStartDate.toISOString().split('T')[0],
+            endDate: newEndDate.toISOString().split('T')[0],
         });
     }
   };
+  // --- FIM DA CORREÇÃO ---
   
   const handleToggleCategory = (categoryValue: string) => {
     setSelectedCategories(prev =>
