@@ -5,7 +5,7 @@ import { DraggableEvent } from './DraggableEvent';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { useFloatingPanel } from '@/components/ui/floating-panel';
-import { format, isSameDay, isSameMonth } from 'date-fns';
+import { format, isSameMonth, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 
 interface CalendarGridProps {
   currentDate: Date;
@@ -41,14 +41,21 @@ export function CalendarGrid({
 
   const { openFloatingPanel } = useFloatingPanel();
 
-  const isToday = (date: Date) => isSameDay(date, new Date());
+  const isToday = (date: Date) => format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
   const isCurrentMonth = (date: Date) => isSameMonth(date, currentDate);
   
+  // --- CORREÇÃO DA LÓGICA DE EVENTOS ---
+  // Agora, a função verifica se o dia atual está no intervalo entre a data de início e fim do evento.
   const getEventsForDate = (date: Date) => {
-    return events.filter(event => 
-      isSameDay(new Date(event.startDate), date)
-    );
+    const dayStart = startOfDay(date);
+    return events.filter(event => {
+      const eventStart = startOfDay(new Date(event.startDate));
+      // Se não houver data final, considera-se que o evento dura apenas um dia.
+      const eventEnd = event.endDate ? endOfDay(new Date(event.endDate)) : endOfDay(eventStart);
+      return isWithinInterval(dayStart, { start: eventStart, end: eventEnd });
+    });
   };
+  // --- FIM DA CORREÇÃO ---
 
   const getSpecialEventType = (date: Date) => {
     const dayEvents = getEventsForDate(date);
@@ -58,9 +65,11 @@ export function CalendarGrid({
     if (hasRecesso) return 'recesso';
     return null;
   };
-
+  
+  // --- CORREÇÃO DO REDIMENSIONAMENTO DO CARD ---
+  // Trocamos a altura fixa `h-40` por uma altura mínima `min-h-[10rem]`
   const getDayCardStyles = (date: Date, eventType: string | null) => {
-    const baseClasses = "relative group flex flex-col p-3 rounded-xl shadow-sm transition-all duration-200 cursor-pointer h-40";
+    const baseClasses = "relative group flex flex-col p-3 rounded-xl shadow-sm transition-all duration-200 cursor-pointer min-h-[10rem]";
     if (!isCurrentMonth(date)) {
       return cn(baseClasses, "bg-gray-50 text-gray-400 hover:bg-gray-100");
     }
@@ -72,6 +81,7 @@ export function CalendarGrid({
     }
     return cn(baseClasses, "bg-white hover:bg-gray-50 hover:shadow-md");
   };
+  // --- FIM DA CORREÇÃO ---
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination || !onEventDrop) return;
@@ -131,7 +141,6 @@ export function CalendarGrid({
                         {date.getDate()}
                       </div>
 
-                      {/* --- BARRA DE ROLAGEM REMOVIDA DAQUI --- */}
                       <div className="space-y-1">
                         {dayEvents.slice(0, 3).map((event, eventIndex) => (
                           <DraggableEvent
