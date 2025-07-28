@@ -1,6 +1,6 @@
 // src/components/ui/animated-modal.tsx
-import React, { useRef, useState, useMemo, forwardRef } from 'react';
-import *d Dialog from '@radix-ui/react-dialog';
+import React, { useRef, useState, useMemo } from 'react';
+import * as Dialog from '@radix-ui/react-dialog'; // CORRIGIDO
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 
@@ -21,7 +21,8 @@ function useMergeRefs<T>(...refs: (React.Ref<T> | undefined)[]) {
         }
       }
     };
-  }, [refs]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, refs);
 }
 
 interface AnimatedModalProps {
