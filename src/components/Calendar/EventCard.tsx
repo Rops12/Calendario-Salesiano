@@ -31,17 +31,19 @@ export function EventCard({ event, onClick, className }: EventCardProps) {
   } as React.CSSProperties;
 
   const getEventCardClasses = () => {
-    const baseStyles = "group/card px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 break-words whitespace-normal leading-tight cursor-pointer border-l-4 flex items-start gap-2";
+    // AJUSTE: Adicionada a classe 'border' para habilitar a borda em todos os lados.
+    const baseStyles = "group/card px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 break-words whitespace-normal leading-tight cursor-pointer border-l-4 flex items-start gap-2 border";
 
-    // Estilos para eventos especiais
-    if (event.eventType === 'feriado') return cn(baseStyles, "bg-red-100 text-red-900 border-l-red-500 font-semibold hover:bg-red-200");
-    if (event.eventType === 'recesso') return cn(baseStyles, "bg-orange-100 text-orange-900 border-l-orange-500 font-semibold hover:bg-orange-200");
-    if (event.eventType === 'evento') return cn(baseStyles, "bg-yellow-100 text-yellow-900 border-l-yellow-500 font-semibold hover:bg-yellow-200");
+    // Eventos especiais com suas respectivas bordas sutis
+    if (event.eventType === 'feriado') return cn(baseStyles, "bg-red-100 text-red-900 border-l-red-500 font-semibold hover:bg-red-200 border-red-200/60");
+    if (event.eventType === 'recesso') return cn(baseStyles, "bg-orange-100 text-orange-900 border-l-orange-500 font-semibold hover:bg-orange-200 border-orange-200/60");
+    if (event.eventType === 'evento') return cn(baseStyles, "bg-yellow-100 text-yellow-900 border-l-yellow-500 font-semibold hover:bg-yellow-200 border-yellow-200/60");
 
-    // Estilo para eventos normais
+    // Estilo para eventos normais com a borda sutil e a lateral mais forte
     return cn(
       baseStyles,
-      "border-[var(--category-color)]",
+      "border-[hsl(var(--category-color-hsl),0.4)]",   // Borda sutil em todos os lados
+      "border-l-[var(--category-color)]",               // Borda esquerda mais forte
       "bg-[hsl(var(--category-color-hsl),0.15)]",
       "hover:bg-[var(--category-color)]"
     );
@@ -61,7 +63,6 @@ export function EventCard({ event, onClick, className }: EventCardProps) {
   
   const getCategoryLabelClasses = () => {
     const base = "text-xs opacity-75 leading-tight";
-    // CORREÇÃO: Define a cor do texto da categoria com base no tipo de evento
     switch (event.eventType) {
       case 'feriado':
         return cn(base, "text-red-700");
@@ -69,7 +70,7 @@ export function EventCard({ event, onClick, className }: EventCardProps) {
         return cn(base, "text-orange-700");
       case 'evento':
         return cn(base, "text-yellow-700");
-      default: // Evento 'normal'
+      default:
         return cn(base, "text-gray-600 group-hover/card:text-gray-200");
     }
   }
