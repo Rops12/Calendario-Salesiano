@@ -29,13 +29,14 @@ export function DayEventModal({ isOpen, onClose, onAddNewEvent, onEventClick, da
           <DialogTitle>{format(date, "EEEE, dd 'de' MMMM", { locale: ptBR })}</DialogTitle>
           <DialogDescription>{events.length} evento(s) encontrado(s).</DialogDescription>
         </DialogHeader>
-        <div className="py-4 space-y-3 max-h-[60vh] overflow-y-auto">
+        {/* Adicionado px-1 para evitar a barra de rolagem horizontal no hover */}
+        <div className="py-4 px-1 space-y-3 max-h-[60vh] overflow-y-auto">
           {events.length > 0 ? events.map(event => (
             <EventCard 
               key={event.id}
               event={event}
               onClick={() => { onEventClick(event); onClose(); }}
-              className="hover:scale-[1.02] hover:shadow-medium" // Adiciona um efeito de hover
+              className="hover:scale-[1.02] hover:shadow-medium"
             />
           )) : <p className="text-muted-foreground text-center py-8">Nenhum evento para este dia.</p>}
         </div>
