@@ -18,6 +18,7 @@ const TRANSITION = {
   duration: 0.4,
 }
 
+// Tipagem adaptada para o calendário
 interface FloatingPanelContextType {
   isOpen: boolean
   openFloatingPanel: (rect: DOMRect, date: Date, events: CalendarEvent[]) => void
@@ -46,6 +47,7 @@ export function useFloatingPanel() {
   return context
 }
 
+// Lógica adaptada para o calendário
 function useFloatingPanelLogic() {
   const uniqueId = useId()
   const [isOpen, setIsOpen] = useState(false)
@@ -139,18 +141,18 @@ export function FloatingPanelContent({
   return (
     <AnimatePresence>
       {isOpen && (
-        // --- CORREÇÃO DE CENTRALIZAÇÃO ---
-        // Este container flex garante a centralização perfeita
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          onClick={closeFloatingPanel}
+          onClick={closeFloatingPanel} // Fecha ao clicar no overlay
         >
+          {/* Fundo com blur */}
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1, backdropFilter: "blur(4px)" }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/30"
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
           />
+          {/* Conteúdo do Modal */}
           <motion.div
             ref={contentRef}
             className={cn(
@@ -169,13 +171,12 @@ export function FloatingPanelContent({
             {children({ activeDate, activeEvents })}
           </motion.div>
         </div>
-        // --- FIM DA CORREÇÃO ---
       )}
     </AnimatePresence>
   )
 }
 
-// O restante do código permanece o mesmo
+// --- TODOS OS SUBCOMPONENTES FORAM MANTIDOS ---
 
 interface FloatingPanelHeaderProps {
     children: React.ReactNode
