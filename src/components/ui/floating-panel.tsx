@@ -18,7 +18,6 @@ const TRANSITION = {
   duration: 0.4,
 }
 
-// Tipagem adaptada para o calendário
 interface FloatingPanelContextType {
   isOpen: boolean
   openFloatingPanel: (rect: DOMRect, date: Date, events: CalendarEvent[]) => void
@@ -47,7 +46,6 @@ export function useFloatingPanel() {
   return context
 }
 
-// Lógica adaptada para o calendário
 function useFloatingPanelLogic() {
   const uniqueId = useId()
   const [isOpen, setIsOpen] = useState(false)
@@ -125,19 +123,6 @@ export function FloatingPanelContent({
   const contentRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        contentRef.current &&
-        !contentRef.current.contains(event.target as Node)
-      ) {
-        closeFloatingPanel()
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [closeFloatingPanel])
-
-  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") closeFloatingPanel()
     }
@@ -145,140 +130,147 @@ export function FloatingPanelContent({
     return () => document.removeEventListener("keydown", handleKeyDown)
   }, [closeFloatingPanel])
 
+
   const variants = {
-    hidden: { opacity: 0, scale: 0.95, y: 10 },
-    visible: { opacity: 1, scale: 1, y: 0 },
+    hidden: { opacity: 0, scale: 0.95 },
+    visible: { opacity: 1, scale: 1 },
   };
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
+        // --- CORREÇÃO DE CENTRALIZAÇÃO ---
+        // Este container flex garante a centralização perfeita
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={closeFloatingPanel}
+        >
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1, backdropFilter: "blur(4px)" }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/30"
-            onClick={closeFloatingPanel}
+            className="absolute inset-0 bg-black/30"
           />
           <motion.div
             ref={contentRef}
             className={cn(
-              "fixed z-50 overflow-hidden border border-zinc-950/10 bg-background shadow-lg outline-none dark:border-zinc-50/10 dark:bg-zinc-800",
-              // --- POSICIONAMENTO CORRIGIDO PARA O CENTRO ---
-              "left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%] w-[450px] max-h-[80vh] rounded-2xl",
+              "relative z-10 max-h-[90vh] w-full max-w-lg overflow-hidden rounded-2xl border bg-background shadow-lg",
               className
             )}
+            variants={variants}
             initial="hidden"
             animate="visible"
             exit="hidden"
-            variants={variants}
             transition={TRANSITION}
             role="dialog"
             aria-modal="true"
+            onClick={(e) => e.stopPropagation()} // Impede que o clique dentro do modal o feche
           >
             {children({ activeDate, activeEvents })}
           </motion.div>
-        </>
+        </div>
+        // --- FIM DA CORREÇÃO ---
       )}
     </AnimatePresence>
   )
 }
 
+// O restante do código permanece o mesmo
+
 interface FloatingPanelHeaderProps {
-  children: React.ReactNode
-  className?: string
-}
-
-export function FloatingPanelHeader({
-  children,
-  className,
-}: FloatingPanelHeaderProps) {
-  return (
-    <motion.div
-      className={cn(
-        "px-4 py-2 font-semibold text-zinc-900 dark:text-zinc-100",
-        className
-      )}
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 }}
-    >
-      {children}
-    </motion.div>
-  )
-}
-
-interface FloatingPanelBodyProps {
-  children: React.ReactNode
-  className?: string
-}
-
-export function FloatingPanelBody({
-  children,
-  className,
-}: FloatingPanelBodyProps) {
-  return (
-    <motion.div
-      className={cn("p-4", className)}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2 }}
-    >
-      {children}
-    </motion.div>
-  )
-}
-
-interface FloatingPanelFooterProps {
-  children: React.ReactNode
-  className?: string
-}
-
-export function FloatingPanelFooter({
-  children,
-  className,
-}: FloatingPanelFooterProps) {
-  return (
-    <motion.div
-      className={cn("flex justify-between px-4 py-3", className)}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.3 }}
-    >
-      {children}
-    </motion.div>
-  )
-}
-
-interface FloatingPanelCloseButtonProps {
-  className?: string
-}
-
-export function FloatingPanelCloseButton({
-  className,
-}: FloatingPanelCloseButtonProps) {
-  const { closeFloatingPanel } = useFloatingPanel()
-
-  return (
-    <motion.button
-      type="button"
-      className={cn("flex items-center", className)}
-      onClick={closeFloatingPanel}
-      aria-label="Close floating panel"
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.9 }}
-    >
-      <ArrowLeftIcon size={16} className="text-zinc-900 dark:text-zinc-100" />
-    </motion.button>
-  )
-}
-
-export {
-  FloatingPanelRoot as Root,
-  FloatingPanelContent as Content,
-  FloatingPanelHeader as Header,
-  FloatingPanelBody as Body,
-  FloatingPanelFooter as Footer,
-  FloatingPanelCloseButton as CloseButton,
-}
+    children: React.ReactNode
+    className?: string
+  }
+  
+  export function FloatingPanelHeader({
+    children,
+    className,
+  }: FloatingPanelHeaderProps) {
+    return (
+      <motion.div
+        className={cn(
+          "px-4 py-2 font-semibold text-zinc-900 dark:text-zinc-100",
+          className
+        )}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        {children}
+      </motion.div>
+    )
+  }
+  
+  interface FloatingPanelBodyProps {
+    children: React.ReactNode
+    className?: string
+  }
+  
+  export function FloatingPanelBody({
+    children,
+    className,
+  }: FloatingPanelBodyProps) {
+    return (
+      <motion.div
+        className={cn("p-4", className)}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        {children}
+      </motion.div>
+    )
+  }
+  
+  interface FloatingPanelFooterProps {
+    children: React.ReactNode
+    className?: string
+  }
+  
+  export function FloatingPanelFooter({
+    children,
+    className,
+  }: FloatingPanelFooterProps) {
+    return (
+      <motion.div
+        className={cn("flex justify-between px-4 py-3", className)}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        {children}
+      </motion.div>
+    )
+  }
+  
+  interface FloatingPanelCloseButtonProps {
+    className?: string
+  }
+  
+  export function FloatingPanelCloseButton({
+    className,
+  }: FloatingPanelCloseButtonProps) {
+    const { closeFloatingPanel } = useFloatingPanel()
+  
+    return (
+      <motion.button
+        type="button"
+        className={cn("flex items-center", className)}
+        onClick={closeFloatingPanel}
+        aria-label="Close floating panel"
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+      >
+        <ArrowLeftIcon size={16} className="text-zinc-900 dark:text-zinc-100" />
+      </motion.button>
+    )
+  }
+  
+  export {
+    FloatingPanelRoot as Root,
+    FloatingPanelContent as Content,
+    FloatingPanelHeader as Header,
+    FloatingPanelBody as Body,
+    FloatingPanelFooter as Footer,
+    FloatingPanelCloseButton as CloseButton,
+  }
