@@ -21,6 +21,25 @@ import { DayEventModal } from '@/components/Calendar/DayEventModal';
 import { useCategories } from '@/hooks/useCategories.tsx';
 import { useAuth } from '@/hooks/useAuth';
 
+// Definição da ordem hierárquica das categorias
+const categoryOrder: { [key: string]: number } = {
+  'geral': 1,
+  'feriado': 2,
+  'recesso': 3,
+  'evento': 4,
+  'infantil': 10,
+  'fundamental1': 11,
+  'fundamental2': 12,
+  'medio': 13,
+  'pastoral': 20,
+  'esportes': 21,
+  'biblioteca': 22,
+  'robotica': 23,
+  'nap': 24,
+};
+
+const getCategoryOrder = (category: string) => categoryOrder[category] || 99;
+
 const Index = () => {
   const navigate = useNavigate();
   const params = useParams();
@@ -186,7 +205,14 @@ const Index = () => {
     (event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (event.description && event.description.toLowerCase().includes(searchQuery.toLowerCase()))) &&
     selectedCategories.includes(event.category)
-  ), [events, searchQuery, selectedCategories]);
+  ).sort((a, b) => {
+    const orderA = getCategoryOrder(a.category);
+    const orderB = getCategoryOrder(b.category);
+    if (orderA !== orderB) {
+      return orderA - orderB;
+    }
+    return a.title.localeCompare(b.title);
+  }), [events, searchQuery, selectedCategories]);
 
   const dailyEventsForModal = useMemo(() => {
     if (!selectedDateForModal) return [];
@@ -195,7 +221,7 @@ const Index = () => {
         const eventStartDate = event.startDate.split('T')[0];
         const eventEndDate = event.endDate ? event.endDate.split('T')[0] : eventStartDate;
         return dateStr >= eventStartDate && dateStr <= eventEndDate;
-    }).sort((a, b) => a.title.localeCompare(b.title));
+    });
   }, [selectedDateForModal, filteredEvents]);
 
   const animationClass = 
