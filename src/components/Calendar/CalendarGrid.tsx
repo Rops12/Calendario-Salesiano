@@ -39,23 +39,24 @@ export function CalendarGrid({
     current.setDate(current.getDate() + 1);
   }
 
-  // --- INÍCIO DA MODIFICAÇÃO ---
   const { openFloatingPanel } = useFloatingPanel();
-  // --- FIM DA MODIFICAÇÃO ---
 
   const isToday = (date: Date) => isSameDay(date, new Date());
   const isCurrentMonth = (date: Date) => isSameMonth(date, currentDate);
   
+  // --- CORREÇÃO AQUI ---
+  // Trocado event.start por event.startDate para corresponder à estrutura de dados
   const getEventsForDate = (date: Date) => {
     return events.filter(event => 
-      isSameDay(new Date(event.start), date)
+      isSameDay(new Date(event.startDate), date)
     );
   };
+  // --- FIM DA CORREÇÃO ---
 
   const getSpecialEventType = (date: Date) => {
     const dayEvents = getEventsForDate(date);
-    const hasFeriado = dayEvents.some(e => e.category === 'feriado');
-    const hasRecesso = dayEvents.some(e => e.category === 'recesso');
+    const hasFeriado = dayEvents.some(e => e.eventType === 'feriado');
+    const hasRecesso = dayEvents.some(e => e.eventType === 'recesso');
     if (hasFeriado) return 'feriado';
     if (hasRecesso) return 'recesso';
     return null;
@@ -105,11 +106,9 @@ export function CalendarGrid({
                       ref={provided.innerRef}
                       {...provided.droppableProps}
                       className={getDayCardStyles(date, specialEventType)}
-                      // --- INÍCIO DA MODIFICAÇÃO ---
                       onClick={(e) => {
                         openFloatingPanel(e.currentTarget.getBoundingClientRect(), date, dayEvents);
                       }}
-                      // --- FIM DA MODIFICAÇÃO ---
                     >
                       {onAddNewEvent && (
                         <Button
@@ -117,7 +116,7 @@ export function CalendarGrid({
                           size="icon"
                           className="absolute top-2 right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 bg-white shadow-sm hover:bg-gray-50"
                           onClick={(e) => {
-                            e.stopPropagation(); // Impede que o painel flutuante seja aberto
+                            e.stopPropagation();
                             onAddNewEvent(date);
                           }}
                           aria-label="Adicionar novo evento"
