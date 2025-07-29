@@ -45,12 +45,19 @@ export function CalendarGrid({
 
   const isToday = (date: Date) => format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
   const isCurrentMonth = (date: Date) => isSameMonth(date, currentDate);
+  
+  // CORREÇÃO: Função auxiliar para parsear datas sem problemas de fuso horário
+  const parseLocalDate = (dateString: string) => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
 
   const getEventsForDate = (date: Date) => {
     const dayStart = startOfDay(date);
     return events.filter(event => {
-      const eventStart = startOfDay(new Date(event.startDate));
-      const eventEnd = event.endDate ? endOfDay(new Date(event.endDate)) : endOfDay(eventStart);
+      // CORREÇÃO: Usa a função auxiliar para criar datas locais
+      const eventStart = startOfDay(parseLocalDate(event.startDate));
+      const eventEnd = event.endDate ? endOfDay(parseLocalDate(event.endDate)) : endOfDay(eventStart);
       return isWithinInterval(dayStart, { start: eventStart, end: eventEnd });
     });
   };
@@ -74,7 +81,6 @@ export function CalendarGrid({
     if (eventType === 'feriado') {
       return cn(baseClasses, "bg-red-50 text-red-800 border-red-200", hoverClasses, "hover:bg-red-100");
     }
-    // AJUSTE: Alterado de 'yellow' para 'orange' para um tom mais alaranjado
     if (eventType === 'recesso') {
       return cn(baseClasses, "bg-orange-50 text-orange-800 border-orange-200", hoverClasses, "hover:bg-orange-100");
     }
