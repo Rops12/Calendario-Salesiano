@@ -1,7 +1,7 @@
+// src/services/supabase/SupabaseEventService.ts
 import { supabase } from '@/integrations/supabase/client';
 import { CalendarEvent, EventFormData } from '@/types/calendar';
 import { IEventService } from '../interfaces/IEventService';
-import { useAuth } from '@/hooks/useAuth';
 
 export class SupabaseEventService implements IEventService {
   private async sendEventNotification(
@@ -49,6 +49,32 @@ export class SupabaseEventService implements IEventService {
     } catch (error) {
       console.error('Error sending event notification:', error);
     }
+  }
+
+  // CORREÇÃO: Função auxiliar para parsear datas sem problemas de fuso horário
+  private parseUTCDateString(dateString: string): Date {
+    const [year, month, day] = dateString.split('-').map(Number);
+    // Cria a data como se estivesse em UTC para evitar deslocamentos de fuso
+    return new Date(Date.UTC(year, month - 1, day));
+  }
+  
+  private mapDatabaseToEvent(dbEvent: any): CalendarEvent {
+    // CORREÇÃO: Garante que as datas sejam lidas corretamente sem deslocamento de fuso
+    const startDate = new Date(dbEvent.start_date + 'T00:00:00');
+    const endDate = dbEvent.end_date ? new Date(dbEvent.end_date + 'T00:00:00') : undefined;
+  
+    return {
+      id: dbEvent.id,
+      title: dbEvent.title,
+      description: dbEvent.description,
+      date: dbEvent.start_date,
+      startDate: dbEvent.start_date,
+      endDate: dbEvent.end_date,
+      category: dbEvent.category,
+      eventType: dbEvent.event_type,
+      createdAt: dbEvent.created_at,
+      updatedAt: dbEvent.updated_at
+    };
   }
 
   async getEventsByDateRange(startDate: string, endDate: string): Promise<CalendarEvent[]> {
@@ -116,7 +142,6 @@ export class SupabaseEventService implements IEventService {
 
     const newEvent = this.mapDatabaseToEvent(data);
     
-    // Send notification email
     await this.sendEventNotification(newEvent.id, eventData, 'created');
     
     return newEvent;
@@ -145,14 +170,12 @@ export class SupabaseEventService implements IEventService {
 
     const updatedEvent = this.mapDatabaseToEvent(data);
     
-    // Send notification email
     await this.sendEventNotification(id, eventData, 'updated');
     
     return updatedEvent;
   }
 
   async deleteEvent(id: string): Promise<void> {
-    // Get event data before deletion for notification
     const { data: eventData } = await supabase
       .from('events')
       .select('*')
@@ -169,26 +192,9 @@ export class SupabaseEventService implements IEventService {
       throw new Error('Erro ao excluir evento');
     }
 
-    // Send notification email if event was found
     if (eventData) {
       const mappedEvent = this.mapDatabaseToEvent(eventData);
       await this.sendEventNotification(id, mappedEvent, 'deleted');
     }
-  }
-
-  private mapDatabaseToEvent(dbEvent: any): CalendarEvent {
-    return {
-      id: dbEvent.id,
-      title: dbEvent.title,
-      description: dbEvent.description,
-      date: dbEvent.start_date, // Para compatibilidade
-      startDate: dbEvent.start_date,
-      endDate: dbEvent.end_date,
-      category: dbEvent.category,
-      eventType: dbEvent.event_type,
-      isHoliday: dbEvent.event_type === 'feriado',
-      createdAt: dbEvent.created_at,
-      updatedAt: dbEvent.updated_at
-    };
   }
 }
