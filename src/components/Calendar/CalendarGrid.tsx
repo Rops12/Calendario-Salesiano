@@ -74,8 +74,9 @@ export function CalendarGrid({
     if (eventType === 'feriado') {
       return cn(baseClasses, "bg-red-50 text-red-800 border-red-200", hoverClasses, "hover:bg-red-100");
     }
+    // AJUSTE: Alterado de 'yellow' para 'orange' para um tom mais alaranjado
     if (eventType === 'recesso') {
-      return cn(baseClasses, "bg-yellow-50 text-yellow-800 border-yellow-200", hoverClasses, "hover:bg-yellow-100");
+      return cn(baseClasses, "bg-orange-50 text-orange-800 border-orange-200", hoverClasses, "hover:bg-orange-100");
     }
     return cn(baseClasses, "bg-white border-gray-200", hoverClasses, "hover:bg-gray-50 hover:border-gray-300");
   };
@@ -122,9 +123,6 @@ export function CalendarGrid({
                       {onAddNewEvent && (
                         <Button
                           variant="ghost" size="icon"
-                          // ANTES:
-                          // className="absolute top-2 right-2 h-7 w-7 rounded-full opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 bg-background/60 backdrop-blur-sm shadow-sm hover:bg-gray-100"
-                          // DEPOIS (Correção):
                           className="absolute top-2 right-2 h-7 w-7 rounded-full transition-opacity focus:opacity-100 bg-background/60 backdrop-blur-sm shadow-sm hover:bg-gray-100 md:opacity-0 md:group-hover:opacity-100"
                           onClick={(e) => { e.stopPropagation(); onAddNewEvent(date); }}
                           aria-label="Adicionar novo evento"
