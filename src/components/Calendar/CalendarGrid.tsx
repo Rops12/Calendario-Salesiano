@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { useFloatingPanel } from '@/components/ui/floating-panel';
 import { format, isSameMonth, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
-import { ptBR } from 'date-fns/locale'; // Importação para o idioma português
+import { ptBR } from 'date-fns/locale';
 
 interface CalendarGridProps {
   currentDate: Date;
@@ -64,16 +64,20 @@ export function CalendarGrid({
   };
 
   const getDayCardStyles = (date: Date, eventType: string | null) => {
-    const baseClasses = "relative group flex flex-col p-3 rounded-xl shadow-sm transition-all duration-300 min-h-[10rem]";
+    const baseClasses = "relative group flex flex-col p-3 rounded-xl shadow-sm transition-all duration-300 min-h-[10rem] border";
     const hoverClasses = "hover:shadow-xl hover:-translate-y-1";
     
+    // AJUSTE 2: Lógica do dia atual adicionada de volta e com prioridade
+    if (isToday(date)) {
+      return cn(baseClasses, "bg-blue-50 border-blue-200 shadow-sm", hoverClasses, "hover:bg-blue-100");
+    }
     if (eventType === 'feriado') {
-      return cn(baseClasses, "bg-red-50 text-red-800", hoverClasses, "hover:bg-red-100");
+      return cn(baseClasses, "bg-red-50 text-red-800 border-red-200", hoverClasses, "hover:bg-red-100");
     }
     if (eventType === 'recesso') {
-      return cn(baseClasses, "bg-yellow-50 text-yellow-800", hoverClasses, "hover:bg-yellow-100");
+      return cn(baseClasses, "bg-yellow-50 text-yellow-800 border-yellow-200", hoverClasses, "hover:bg-yellow-100");
     }
-    return cn(baseClasses, "bg-white", hoverClasses, "hover:bg-gray-50");
+    return cn(baseClasses, "bg-white border-gray-200", hoverClasses, "hover:bg-gray-50 hover:border-gray-300");
   };
 
   const handleDragEnd = (result: DropResult) => {
@@ -86,7 +90,6 @@ export function CalendarGrid({
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="bg-gray-50">
-        {/* AJUSTE 1: Padding superior reduzido em telas pequenas para remover o espaço */}
         <div className="px-4 sm:px-6 pb-6 pt-2 sm:py-6">
           <div className="hidden md:grid grid-cols-7 gap-4 mb-4">
             {daysOfWeek.map((day) => (
@@ -96,7 +99,6 @@ export function CalendarGrid({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-4">
             {days.map((date, index) => {
-              // AJUSTE 1: Oculta os dias de outros meses em telas pequenas (mobile)
               if (!isCurrentMonth(date)) {
                 return <div key={index} className="hidden md:block"></div>;
               }
@@ -128,21 +130,21 @@ export function CalendarGrid({
                         </Button>
                       )}
 
-                      {/* AJUSTE 2: Cabeçalho do Card Responsivo */}
-                      {/* Cabeçalho para Mobile (Visível até o breakpoint 'md') */}
-                      <div className="md:hidden flex justify-between items-center mb-2 pb-2 border-b border-gray-200/80">
-                        <span className="font-bold text-sm capitalize text-gray-700">
+                      {/* AJUSTE 1: Cabeçalho Linear para Mobile */}
+                      <div className="md:hidden flex items-baseline gap-2 mb-2 pb-2 border-b">
+                        <span className={cn("text-2xl font-bold", isToday(date) ? "text-blue-600" : "text-gray-800")}>
+                          {format(date, 'd', { locale: ptBR })}
+                        </span>
+                        <span className="font-semibold capitalize text-gray-700">
                           {format(date, 'EEEE', { locale: ptBR })}
                         </span>
-                        <div className={cn(
-                          "flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold",
-                          isToday(date) && "bg-blue-600 text-white shadow-md"
-                        )}>
-                          {date.getDate()}
-                        </div>
+                        <span className="text-gray-400 text-sm">|</span>
+                        <span className="text-gray-500 text-sm capitalize">
+                          {format(date, 'MMM', { locale: ptBR })}
+                        </span>
                       </div>
-
-                      {/* Cabeçalho para Desktop (Oculto até o breakpoint 'md') */}
+                      
+                      {/* Cabeçalho para Desktop */}
                       <div className={cn(
                         "hidden md:flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold mb-3 transition-all duration-300",
                         isToday(date) && "bg-blue-600 text-white shadow-lg", "text-gray-800"
