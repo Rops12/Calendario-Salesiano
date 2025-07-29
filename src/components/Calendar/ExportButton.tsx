@@ -1,7 +1,14 @@
 // src/components/Calendar/ExportButton.tsx
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
+} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Download, FileText, FileSpreadsheet } from 'lucide-react';
+import { Download, Calendar, ListChecks } from 'lucide-react';
 import { usePdfExport } from '@/hooks/usePdfExport';
 import { CalendarEvent, EventCategory } from '@/types/calendar';
 
@@ -12,16 +19,17 @@ interface ExportButtonProps {
 }
 
 export function ExportButton({ currentDate, events, selectedCategories }: ExportButtonProps) {
-  const { exportMonthToPdf, exportFullYearToPdf } = usePdfExport(events, selectedCategories);
+  // O hook agora retorna quatro funções
+  const { 
+    exportMonthToCalendar, 
+    exportYearToCalendar,
+    exportMonthToAgenda,
+    exportYearToAgenda
+  } = usePdfExport(events, selectedCategories);
 
-  // As funções agora são assíncronas para usar os toasts de feedback
-  const handleExportMonth = async () => {
-    await exportMonthToPdf(currentDate);
-  };
-
-  const handleExportYear = async () => {
+  const handleExportYear = (exportFunc: (year: number) => Promise<void>) => {
     const year = currentDate.getFullYear();
-    await exportFullYearToPdf(year);
+    exportFunc(year);
   };
 
   return (
@@ -37,14 +45,27 @@ export function ExportButton({ currentDate, events, selectedCategories }: Export
           <span className="hidden md:inline">Exportar</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={handleExportMonth}>
-          <FileText className="mr-2 h-4 w-4" />
-          Exportar Mês (PDF)
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>Exportar Mês Atual</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => exportMonthToCalendar(currentDate)}>
+          <Calendar className="mr-2 h-4 w-4" />
+          <span>PDF (Calendário)</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleExportYear}>
-          <FileSpreadsheet className="mr-2 h-4 w-4" />
-          Exportar Ano Completo (PDF)
+        <DropdownMenuItem onClick={() => exportMonthToAgenda(currentDate)}>
+          <ListChecks className="mr-2 h-4 w-4" />
+          <span>PDF (Agenda)</span>
+        </DropdownMenuItem>
+        
+        <DropdownMenuSeparator />
+        
+        <DropdownMenuLabel>Exportar Ano Completo</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => handleExportYear(exportYearToCalendar)}>
+          <Calendar className="mr-2 h-4 w-4" />
+          <span>PDF (Calendário)</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleExportYear(exportYearToAgenda)}>
+          <ListChecks className="mr-2 h-4 w-4" />
+          <span>PDF (Agenda)</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

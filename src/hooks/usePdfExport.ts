@@ -1,5 +1,6 @@
 // src/hooks/usePdfExport.ts
 import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import {
   format,
   startOfMonth,
@@ -17,11 +18,11 @@ import { CalendarEvent, EventCategory } from '@/types/calendar';
 import { useCategories } from '@/hooks/useCategories.tsx';
 import { toast } from 'sonner';
 
-// --- Constantes de Layout (sem alterações) ---
+// --- Constantes de Layout ---
 const A4_WIDTH = 841.89;
 const A4_HEIGHT = 595.28;
 const MARGIN = 40;
-const HEADER_HEIGHT = 100; 
+const HEADER_HEIGHT = 100;
 const FOOTER_HEIGHT = 50;
 const CALENDAR_WIDTH = A4_WIDTH - 2 * MARGIN;
 const CALENDAR_HEIGHT = A4_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT;
@@ -33,7 +34,7 @@ export const usePdfExport = (
 ) => {
   const { categories, getCategory } = useCategories();
 
-  // --- Funções de Cor (sem alterações) ---
+  // --- Funções Auxiliares (comuns a ambos os formatos) ---
   const hslToHex = (h: number, s: number, l: number): string => {
     l /= 100;
     const a = (s * Math.min(l, 1 - l)) / 100;
@@ -65,39 +66,38 @@ export const usePdfExport = (
     return '#A1A1AA';
   };
 
-  // --- Funções de Desenho no PDF (com ajustes na generateMonthPage) ---
-  const addHeader = (doc: jsPDF, title: string) => {
+  const addHeader = (doc: jsPDF, title: string, isAgenda: boolean = false) => {
     doc.setFontSize(24);
     doc.setTextColor('#18181B');
     doc.setFont('helvetica', 'bold');
-    doc.text('Calendário Salesiano', MARGIN, 45);
+    doc.text('Calendário Salesiano', isAgenda ? doc.internal.pageSize.getWidth() / 2 : MARGIN, 45, { align: isAgenda ? 'center' : 'left'});
 
     doc.setFontSize(16);
     doc.setTextColor('#71717A');
     doc.setFont('helvetica', 'normal');
-    doc.text(title, MARGIN, 68); 
-    
-    doc.setDrawColor('#E4E4E7');
-    doc.setLineWidth(1);
-    doc.line(MARGIN, 80, A4_WIDTH - MARGIN, 80); 
+    doc.text(title, isAgenda ? doc.internal.pageSize.getWidth() / 2 : MARGIN, 68, { align: isAgenda ? 'center' : 'left'});
+
+    if (!isAgenda) {
+      doc.setDrawColor('#E4E4E7');
+      doc.setLineWidth(1);
+      doc.line(MARGIN, 80, A4_WIDTH - MARGIN, 80);
+    }
   };
-  
+
   const addFooterWithLegend = (doc: jsPDF) => {
     const pageCount = doc.internal.getNumberOfPages();
     const activeCategories = categories.filter(c => c.isActive && selectedCategories.includes(c.value));
     
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
-      
       let legendX = MARGIN;
-      const legendY = A4_HEIGHT - 35;
+      const legendY = doc.internal.pageSize.getHeight() - 35;
       doc.setFontSize(7);
       
       activeCategories.forEach(category => {
         const color = getCategoryColorHex(category.value);
         const labelWidth = doc.getTextWidth(category.label) + 20;
-        if (legendX + labelWidth > A4_WIDTH - MARGIN) return; 
-
+        if (legendX + labelWidth > doc.internal.pageSize.getWidth() - MARGIN) return;
         doc.setFillColor(color);
         doc.roundedRect(legendX, legendY, 5, 5, 2.5, 2.5, 'F');
         doc.setTextColor('#3F3F46');
@@ -107,46 +107,25 @@ export const usePdfExport = (
       
       doc.setFontSize(9);
       doc.setTextColor('#A1A1AA');
-      doc.text(
-        `Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`,
-        MARGIN,
-        A4_HEIGHT - 15
-      );
-      doc.text(
-        `Página ${i} de ${pageCount}`,
-        A4_WIDTH - MARGIN,
-        A4_HEIGHT - 15,
-        { align: 'right' }
-      );
+      doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, MARGIN, doc.internal.pageSize.getHeight() - 15);
+      doc.text(`Página ${i} de ${pageCount}`, doc.internal.pageSize.getWidth() - MARGIN, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
     }
   };
   
-  const generateMonthPage = async (doc: jsPDF, date: Date) => {
-    // 1. Agrupar eventos por dia
+  // --- LÓGICA 1: GERADOR DE CALENDÁRIO EM GRADE ---
+  const generateCalendarPage = async (doc: jsPDF, date: Date) => {
     const eventsByDay: { [key: number]: CalendarEvent[] } = {};
-    
-    // CORREÇÃO: A filtragem de `selectedCategories` foi movida para DENTRO deste loop.
-    // Isso garante que a lógica de `eachDayOfInterval` funcione para todos os eventos primeiro.
-    allEvents
-      .filter(event => selectedCategories.includes(event.category))
-      .forEach(event => {
-        const startDate = parseISO(event.startDate + 'T00:00:00');
-        const endDate = event.endDate ? parseISO(event.endDate + 'T00:00:00') : startDate;
-
-        const interval = eachDayOfInterval({ start: startDate, end: endDate });
-        
-        interval.forEach(dayInInterval => {
-          if (dayInInterval.getMonth() === date.getMonth() && dayInInterval.getFullYear() === date.getFullYear()) {
-            const dayOfMonth = dayInInterval.getDate();
-            if (!eventsByDay[dayOfMonth]) eventsByDay[dayOfMonth] = [];
-            if (!eventsByDay[dayOfMonth].find(e => e.id === event.id)) {
-              eventsByDay[dayOfMonth].push(event);
-            }
-          }
-        });
+    allEvents.filter(e => selectedCategories.includes(e.category)).forEach(event => {
+      const interval = eachDayOfInterval({ start: parseISO(event.startDate), end: event.endDate ? parseISO(event.endDate) : parseISO(event.startDate) });
+      interval.forEach(dayInInterval => {
+        if (dayInInterval.getMonth() === date.getMonth() && dayInInterval.getFullYear() === date.getFullYear()) {
+          const dayOfMonth = dayInInterval.getDate();
+          if (!eventsByDay[dayOfMonth]) eventsByDay[dayOfMonth] = [];
+          if (!eventsByDay[dayOfMonth].find(e => e.id === event.id)) eventsByDay[dayOfMonth].push(event);
+        }
+      });
     });
 
-    // 2. Desenhar a grade e os eventos (sem alterações daqui para baixo nesta função)
     const firstDayOfMonth = startOfMonth(date);
     const startingDayIndex = getDay(firstDayOfMonth);
     const daysInMonth = getDaysInMonth(date);
@@ -158,8 +137,7 @@ export const usePdfExport = (
     doc.setFont('helvetica', 'bold');
     doc.setTextColor('#71717A');
     WEEK_DAYS.forEach((day, i) => {
-      const xPosition = MARGIN + (i * CELL_WIDTH) + (CELL_WIDTH / 2);
-      doc.text(day, xPosition, HEADER_HEIGHT - 12, { align: 'center' }); 
+      doc.text(day, MARGIN + (i * CELL_WIDTH) + (CELL_WIDTH / 2), HEADER_HEIGHT - 12, { align: 'center' });
     });
 
     for (let i = 0; i < numWeeks * 7; i++) {
@@ -167,75 +145,144 @@ export const usePdfExport = (
       const dayIndex = i % 7;
       const x = MARGIN + (dayIndex * CELL_WIDTH);
       const y = HEADER_HEIGHT + (weekIndex * CELL_HEIGHT);
-      
       doc.setDrawColor('#E4E4E7');
       doc.rect(x, y, CELL_WIDTH, CELL_HEIGHT, 'S');
 
       const dayOfMonth = i - startingDayIndex + 1;
       if (dayOfMonth > 0 && dayOfMonth <= daysInMonth) {
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor('#18181B');
+        doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor('#18181B');
         doc.text(String(dayOfMonth), x + 5, y + 14);
 
         const dayEvents = eventsByDay[dayOfMonth] || [];
         let eventYOffset = 30;
         const eventLineHeight = 10;
-        const maxLinesPerEvent = 3; 
-        
-        dayEvents.forEach(event => {
+        const maxLinesPerEvent = 3;
+        let eventsRenderedCount = 0;
+
+        for (const event of dayEvents) {
           const clippedText = doc.splitTextToSize(event.title, CELL_WIDTH - 18);
           const linesForThisEvent = clippedText.slice(0, maxLinesPerEvent);
+          const requiredHeight = (linesForThisEvent.length * eventLineHeight) + 2;
           
-          if (eventYOffset + (linesForThisEvent.length * eventLineHeight) > CELL_HEIGHT - 5) return;
-
-          const color = getCategoryColorHex(event.category);
-          doc.setFillColor(color);
+          if (eventYOffset + requiredHeight > CELL_HEIGHT - 12) {
+            const remainingEvents = dayEvents.length - eventsRenderedCount;
+            if (remainingEvents > 0) {
+              doc.setFontSize(7); doc.setFont('helvetica', 'italic'); doc.setTextColor('#71717A');
+              doc.text(`+ ${remainingEvents} mais...`, x + 5, y + CELL_HEIGHT - 6);
+            }
+            break;
+          }
           
+          doc.setFillColor(getCategoryColorHex(event.category));
           doc.roundedRect(x + 3, y + eventYOffset - 7, 3, 8, 1.5, 1.5, 'F');
-          
-          doc.setFontSize(7.5);
-          doc.setFont('helvetica', 'normal');
-          doc.setTextColor('#3F3F46');
-          
+          doc.setFontSize(7.5); doc.setFont('helvetica', 'normal'); doc.setTextColor('#3F3F46');
           doc.text(linesForThisEvent, x + 10, y + eventYOffset);
-          
-          eventYOffset += (linesForThisEvent.length * eventLineHeight) + 2;
-        });
+          eventYOffset += requiredHeight;
+          eventsRenderedCount++;
+        }
       }
     }
   };
 
-  // Funções de exportação (sem alterações)
-  const exportMonthToPdf = async (currentDate: Date) => {
-    toast.info('Gerando PDF do calendário, aguarde...');
-    const doc = new jsPDF({ orientation: 'l', unit: 'pt', format: 'a4' });
+  // --- LÓGICA 2: GERADOR DE AGENDA EM LISTA ---
+  const generateAgendaPage = (doc: jsPDF, date: Date, yearOnly: boolean = false) => {
+    const monthName = format(date, "MMMM 'de' yyyy", { locale: ptBR });
+    const title = yearOnly ? `Ano Completo de ${getYear(date)}` : monthName.charAt(0).toUpperCase() + monthName.slice(1);
+    addHeader(doc, title, true);
+    
+    const monthEvents = allEvents
+      .filter(event => {
+        const eventDate = parseISO(event.startDate);
+        const isInMonth = eventDate.getMonth() === date.getMonth() && eventDate.getFullYear() === date.getFullYear();
+        const isInYear = eventDate.getFullYear() === date.getFullYear();
+        return (yearOnly ? isInYear : isInMonth) && selectedCategories.includes(event.category);
+      })
+      .sort((a, b) => parseISO(a.startDate).getTime() - parseISO(b.startDate).getTime());
+      
+    if (monthEvents.length === 0 && !yearOnly) return;
 
+    const tableBody = monthEvents.map(event => {
+      const category = getCategory(event.category);
+      const startDate = format(parseISO(event.startDate), 'dd/MM/yyyy');
+      const endDate = event.endDate ? format(parseISO(event.endDate), 'dd/MM/yyyy') : startDate;
+      const dateRange = startDate === endDate ? startDate : `${startDate} a ${endDate}`;
+      return [{ content: dateRange }, { content: event.title }, { content: category?.label || event.category }];
+    });
+    
+    autoTable(doc, {
+      startY: 90,
+      head: [['Data', 'Atividade', 'Segmento']],
+      body: tableBody,
+      theme: 'grid',
+      headStyles: { fillColor: '#1E3A8A', textColor: '#FFFFFF', fontStyle: 'bold' },
+      styles: { fontSize: 9, cellPadding: 6, valign: 'middle' },
+      columnStyles: { 0: { cellWidth: 100 }, 2: { cellWidth: 100 } },
+      didParseCell: (data) => {
+        if (data.column.index === 2 && data.row.section === 'body') {
+          const event = monthEvents[data.row.index];
+          if (event) {
+            data.cell.styles.fillColor = getCategoryColorHex(event.category);
+            data.cell.styles.textColor = '#FFFFFF';
+            data.cell.styles.fontStyle = 'bold';
+          }
+        }
+      }
+    });
+  };
+
+  // --- FUNÇÕES DE EXPORTAÇÃO ---
+  const exportMonthToCalendar = async (currentDate: Date) => {
+    toast.info('Gerando PDF (Calendário)...');
+    const doc = new jsPDF({ orientation: 'l', unit: 'pt', format: 'a4' });
     const monthName = format(currentDate, "MMMM 'de' yyyy", { locale: ptBR });
     addHeader(doc, monthName.charAt(0).toUpperCase() + monthName.slice(1));
-    await generateMonthPage(doc, currentDate);
+    await generateCalendarPage(doc, currentDate);
     addFooterWithLegend(doc);
-
-    doc.save(`calendario-${format(currentDate, 'MMMM-yyyy')}.pdf`);
-    toast.success('PDF do calendário gerado com sucesso!');
+    doc.save(`calendario-mensal-${format(currentDate, 'MM-yyyy')}.pdf`);
+    toast.success('PDF (Calendário) gerado!');
   };
 
-  const exportFullYearToPdf = async (year: number) => {
-    toast.info('Gerando PDF do ano completo. Isso pode demorar um momento...');
+  const exportYearToCalendar = async (year: number) => {
+    toast.info('Gerando PDF do ano (Calendário)...');
     const doc = new jsPDF('l', 'pt', 'a4');
     const months = eachMonthOfInterval({ start: startOfYear(new Date(year, 0, 1)), end: endOfYear(new Date(year, 11, 31)) });
-
-    for (let i = 0; i < months.length; i++) {
+    for (const [i, month] of months.entries()) {
       if (i > 0) doc.addPage();
-      const monthName = format(months[i], "MMMM 'de' yyyy", { locale: ptBR });
+      const monthName = format(month, "MMMM 'de' yyyy", { locale: ptBR });
       addHeader(doc, monthName.charAt(0).toUpperCase() + monthName.slice(1));
-      await generateMonthPage(doc, months[i]);
+      await generateCalendarPage(doc, month);
     }
-    
     addFooterWithLegend(doc);
-    doc.save(`calendario-completo-${year}.pdf`);
-    toast.success('PDF do ano completo gerado com sucesso!');
+    doc.save(`calendario-anual-${year}.pdf`);
+    toast.success('PDF do ano (Calendário) gerado!');
   };
 
-  return { exportMonthToPdf, exportFullYearToPdf };
+  const exportMonthToAgenda = async (currentDate: Date) => {
+    toast.info('Gerando PDF (Agenda)...');
+    const doc = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
+    generateAgendaPage(doc, currentDate);
+    addFooterWithLegend(doc);
+    doc.save(`agenda-mensal-${format(currentDate, 'MM-yyyy')}.pdf`);
+    toast.success('PDF (Agenda) gerado!');
+  };
+
+  const exportYearToAgenda = async (year: number) => {
+    toast.info('Gerando PDF do ano (Agenda)...');
+    const doc = new jsPDF('p', 'pt', 'a4');
+    const months = eachMonthOfInterval({ start: startOfYear(new Date(year, 0, 1)), end: endOfYear(new Date(year, 11, 31)) });
+    let isFirstPage = true;
+    months.forEach(month => {
+      const monthEvents = allEvents.filter(event => parseISO(event.startDate).getMonth() === month.getMonth() && parseISO(event.startDate).getFullYear() === year && selectedCategories.includes(event.category));
+      if (monthEvents.length > 0) {
+        if (!isFirstPage) { (doc as any).lastAutoTable.finalY > 70 ? doc.addPage() : null; }
+        generateAgendaPage(doc, month);
+        isFirstPage = false;
+      }
+    });
+    addFooterWithLegend(doc);
+    doc.save(`agenda-anual-${year}.pdf`);
+    toast.success('PDF do ano (Agenda) gerado!');
+  };
+
+  return { exportMonthToCalendar, exportYearToCalendar, exportMonthToAgenda, exportYearToAgenda };
 };
