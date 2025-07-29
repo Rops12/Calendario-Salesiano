@@ -1,3 +1,4 @@
+// src/components/Calendar/CalendarGrid.tsx
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import { CalendarEvent } from '@/types/calendar';
 import { cn } from '@/lib/utils';
@@ -67,7 +68,6 @@ export function CalendarGrid({
     const baseClasses = "relative group flex flex-col p-3 rounded-xl shadow-sm transition-all duration-300 min-h-[10rem] border";
     const hoverClasses = "hover:shadow-xl hover:-translate-y-1";
     
-    // AJUSTE 2: Lógica do dia atual adicionada de volta e com prioridade
     if (isToday(date)) {
       return cn(baseClasses, "bg-blue-50 border-blue-200 shadow-sm", hoverClasses, "hover:bg-blue-100");
     }
@@ -122,7 +122,10 @@ export function CalendarGrid({
                       {onAddNewEvent && (
                         <Button
                           variant="ghost" size="icon"
-                          className="absolute top-2 right-2 h-7 w-7 rounded-full opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 bg-background/60 backdrop-blur-sm shadow-sm hover:bg-gray-100"
+                          // ANTES:
+                          // className="absolute top-2 right-2 h-7 w-7 rounded-full opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 bg-background/60 backdrop-blur-sm shadow-sm hover:bg-gray-100"
+                          // DEPOIS (Correção):
+                          className="absolute top-2 right-2 h-7 w-7 rounded-full transition-opacity focus:opacity-100 bg-background/60 backdrop-blur-sm shadow-sm hover:bg-gray-100 md:opacity-0 md:group-hover:opacity-100"
                           onClick={(e) => { e.stopPropagation(); onAddNewEvent(date); }}
                           aria-label="Adicionar novo evento"
                         >
@@ -130,7 +133,6 @@ export function CalendarGrid({
                         </Button>
                       )}
 
-                      {/* AJUSTE 1: Cabeçalho Linear para Mobile */}
                       <div className="md:hidden flex items-baseline gap-2 mb-2 pb-2 border-b">
                         <span className={cn("text-2xl font-bold", isToday(date) ? "text-blue-600" : "text-gray-800")}>
                           {format(date, 'd', { locale: ptBR })}
@@ -144,7 +146,6 @@ export function CalendarGrid({
                         </span>
                       </div>
                       
-                      {/* Cabeçalho para Desktop */}
                       <div className={cn(
                         "hidden md:flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold mb-3 transition-all duration-300",
                         isToday(date) && "bg-blue-600 text-white shadow-lg", "text-gray-800"
