@@ -153,12 +153,9 @@ export function EventModal({
             aria-modal="true"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* ANTES:
-            <form onSubmit={handleSubmit} className="flex flex-col h-full">
-            */}
-            {/* DEPOIS (Correção): */}
-            <form onSubmit={handleSubmit} className="flex flex-col">
-              <header className="flex items-center justify-between p-4 border-b">
+            {/* CORREÇÃO: Adicionado 'h-full' e 'overflow-hidden' para garantir que o layout flex funcione corretamente */}
+            <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
+              <header className="flex items-center justify-between p-4 border-b shrink-0">
                 <h3 className="font-semibold text-lg">{isReadOnly ? 'Visualizar Evento' : (event ? 'Editar Evento' : 'Novo Evento')}</h3>
                 <Button type="button" variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-full">
                   <X className="h-4 w-4" />
@@ -216,7 +213,8 @@ export function EventModal({
                 </div>
               </div>
 
-              <footer className="flex justify-between w-full p-4 border-t bg-background mt-auto">
+              {/* CORREÇÃO: Removido 'mt-auto' e adicionado 'shrink-0' para garantir que o rodapé não seja empurrado para fora */}
+              <footer className="flex justify-between w-full p-4 border-t bg-background shrink-0">
                 <div>
                   {!isReadOnly && event && onDelete && (<Button type="button" variant="destructive" onClick={handleDelete}>Excluir</Button>)}
                 </div>
