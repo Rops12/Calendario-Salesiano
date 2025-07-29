@@ -5,7 +5,6 @@ import { format, getYear } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CalendarEvent, EventCategory } from '@/types/calendar';
 import { useCategories } from '@/hooks/useCategories.tsx';
-import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
 
 export const usePdfExport = (
@@ -14,7 +13,7 @@ export const usePdfExport = (
 ) => {
   const { getCategory } = useCategories();
 
-  // Função para converter HSL para Hex, necessário para o jsPDF
+  // Função auxiliar para converter cores HSL (usadas no CSS) para Hex (usado pelo jsPDF)
   const hslToHex = (h: number, s: number, l: number): string => {
     l /= 100;
     const a = (s * Math.min(l, 1 - l)) / 100;
@@ -27,16 +26,16 @@ export const usePdfExport = (
   };
 
   const parseHsl = (hsl: string): [number, number, number] | null => {
-    const match = hsl.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
+    const match = hsl.match(/hsl\((\d+),\s*([\d.]+)%,\s*([\d.]+)%\)/);
     if (match) {
-      return [parseInt(match[1]), parseInt(match[2]), parseInt(match[3])];
+      return [parseInt(match[1]), parseFloat(match[2]), parseFloat(match[3])];
     }
-    const singleValueMatch = hsl.match(/hsl\(([\d\s%]+)\)/);
+    const singleValueMatch = hsl.match(/hsl\(([\d\s%.]+)\)/);
     if (singleValueMatch) {
-        const values = singleValueMatch[1].split(' ').map(s => parseFloat(s));
-        if (values.length === 3) {
-            return [values[0], values[1], values[2]];
-        }
+      const values = singleValueMatch[1].split(' ').map(s => parseFloat(s));
+      if (values.length === 3) {
+        return [values[0], values[1], values[2]];
+      }
     }
     return null;
   };
@@ -52,22 +51,22 @@ export const usePdfExport = (
     return '#D1D5DB'; // Cor de fallback (cinza)
   };
 
-  // Função para criar o cabeçalho de cada página do PDF
+  // Cria um cabeçalho padronizado e moderno para cada página
   const addHeader = (doc: jsPDF, title: string) => {
     doc.setFontSize(22);
-    doc.setTextColor('#1E3A8A'); // Azul Salesiano
+    doc.setTextColor('#1E3A8A'); // Azul Salesiano (consistência de marca)
     doc.text('Calendário Salesiano', doc.internal.pageSize.getWidth() / 2, 45, { align: 'center' });
 
     doc.setFontSize(16);
-    doc.setTextColor('#4B5563');
+    doc.setTextColor('#4B5563'); // Cinza escuro para subtítulo
     doc.text(title, doc.internal.pageSize.getWidth() / 2, 70, { align: 'center' });
   };
 
-  // Função para criar o rodapé
+  // Cria um rodapé com numeração de página
   const addFooter = (doc: jsPDF) => {
     const pageCount = doc.internal.getNumberOfPages();
     doc.setFontSize(8);
-    doc.setTextColor('#6B7280');
+    doc.setTextColor('#6B7280'); // Cinza médio para informações secundárias
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.text(
@@ -83,11 +82,13 @@ export const usePdfExport = (
     const monthName = format(date, "MMMM 'de' yyyy", { locale: ptBR });
     addHeader(doc, monthName.charAt(0).toUpperCase() + monthName.slice(1));
     
+    // Transforma os eventos em linhas para a tabela
     const tableBody = events.map(event => {
       const category = getCategory(event.category);
+      // CORREÇÃO: Trata datas com fuso horário local para evitar bugs
       const startDate = format(new Date(event.startDate + 'T00:00:00'), 'dd/MM/yyyy');
       const endDate = event.endDate ? format(new Date(event.endDate + 'T00:00:00'), 'dd/MM/yyyy') : startDate;
-      const dateRange = startDate === endDate ? startDate : `${startDate} - ${endDate}`;
+      const dateRange = startDate === endDate ? startDate : `${startDate} a ${endDate}`;
       
       return [
         { content: dateRange, styles: { fontStyle: 'bold' } },
@@ -96,27 +97,29 @@ export const usePdfExport = (
       ];
     });
 
+    // Usa o jspdf-autotable para criar uma tabela limpa e profissional
     autoTable(doc, {
       startY: 100,
-      head: [['Data', 'Evento', 'Segmento']],
+      head: [['Data', 'Atividade', 'Segmento']],
       body: tableBody,
       theme: 'grid',
       headStyles: {
-        fillColor: '#2563EB', // Azul primário
+        fillColor: '#2563EB', // Azul primário para o cabeçalho
         textColor: '#FFFFFF',
-        fontStyle: 'bold'
+        fontStyle: 'bold',
       },
       styles: {
         fontSize: 9,
         cellPadding: 6,
-        valign: 'middle'
+        valign: 'middle',
       },
       columnStyles: {
-        0: { cellWidth: 110 },
-        2: { cellWidth: 100 },
+        0: { cellWidth: 110 }, // Largura fixa para a data
+        2: { cellWidth: 100 }, // Largura fixa para o segmento
       },
+      // Hook para estilizar células individualmente
       didParseCell: (data) => {
-        // Colore a célula do segmento de acordo com a categoria
+        // Colore a célula do segmento de acordo com a cor da categoria
         if (data.column.index === 2 && data.row.section === 'body') {
             const event = events[data.row.index];
             if (event) {
@@ -132,7 +135,7 @@ export const usePdfExport = (
   const exportMonthToPdf = async (currentDate: Date) => {
     toast.info('Gerando PDF do mês, por favor aguarde...');
     const doc = new jsPDF({
-      orientation: 'p',
+      orientation: 'p', // Retrato (portrait)
       unit: 'pt',
       format: 'a4'
     });
@@ -142,7 +145,7 @@ export const usePdfExport = (
       return eventDate.getMonth() === currentDate.getMonth() &&
              eventDate.getFullYear() === currentDate.getFullYear() &&
              selectedCategories.includes(event.category);
-    });
+    }).sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
     
     await generatePdfForMonth(doc, currentDate, monthEvents);
     addFooter(doc);
@@ -157,18 +160,19 @@ export const usePdfExport = (
     const doc = new jsPDF('p', 'pt', 'a4');
     
     for (let month = 0; month < 12; month++) {
-      if (month > 0) {
-        doc.addPage();
-      }
-      
       const monthEvents = allEvents.filter(event => {
         const eventDate = new Date(event.startDate + 'T00:00:00');
         return eventDate.getMonth() === month &&
                eventDate.getFullYear() === year &&
                selectedCategories.includes(event.category);
-      });
+      }).sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
       
-      await generatePdfForMonth(doc, new Date(year, month, 1), monthEvents);
+      if (monthEvents.length > 0) {
+        if (doc.internal.getNumberOfPages() > 1 || month > 0 && doc.internal.getNumberOfPages() === 1 && doc.autoTable.previous.finalY > 100) {
+          doc.addPage();
+        }
+        await generatePdfForMonth(doc, new Date(year, month, 1), monthEvents);
+      }
     }
     
     addFooter(doc);

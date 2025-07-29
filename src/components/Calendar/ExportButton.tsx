@@ -14,6 +14,7 @@ interface ExportButtonProps {
 export function ExportButton({ currentDate, events, selectedCategories }: ExportButtonProps) {
   const { exportMonthToPdf, exportFullYearToPdf } = usePdfExport(events, selectedCategories);
 
+  // As funções agora são assíncronas para usar os toasts de feedback
   const handleExportMonth = async () => {
     await exportMonthToPdf(currentDate);
   };
