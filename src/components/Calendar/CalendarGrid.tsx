@@ -97,11 +97,15 @@ export function CalendarGrid({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-4">
             {days.map((date, index) => {
+              if (!isCurrentMonth(date)) {
+                // Renderiza um contêiner vazio para os dias que não são do mês atual
+                return <div key={index} className="min-h-[10rem] bg-transparent"></div>;
+              }
+
               const dayEvents = getEventsForDate(date);
               const dateStr = format(date, 'yyyy-MM-dd');
               const specialEventType = getSpecialEventType(date);
               
-              // Verifica se é o mês atual para renderizar o conteúdo interativo
               const isInteractable = isCurrentMonth(date);
 
               return (
@@ -110,65 +114,53 @@ export function CalendarGrid({
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className={cn(
-                        getDayCardStyles(date, specialEventType),
-                        isInteractable ? "cursor-pointer" : "bg-gray-100 opacity-50 cursor-default pointer-events-none" // Adicionado pointer-events-none
-                      )}
-                      onClick={isInteractable ? (e) => { // Só permite clique se for interativo
+                      className={getDayCardStyles(date, specialEventType)}
+                      onClick={(e) => {
                         openFloatingPanel(e.currentTarget.getBoundingClientRect(), date, dayEvents);
-                      } : undefined}
+                      }}
                     >
-                      {isInteractable ? ( // Renderiza o conteúdo apenas se for interativo
-                        <>
-                          {onAddNewEvent && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="absolute top-2 right-2 h-7 w-7 rounded-full opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 bg-background/60 backdrop-blur-sm shadow-sm hover:bg-gray-100"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onAddNewEvent(date);
-                              }}
-                              aria-label="Adicionar novo evento"
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          )}
-
-                          <div className={cn(
-                            "flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold mb-3 transition-all duration-300",
-                            isToday(date) && "bg-blue-600 text-white shadow-lg",
-                            "text-gray-800" // Sempre mostra a cor do texto padrão para o mês atual
-                          )}>
-                            {date.getDate()}
-                          </div>
-
-                          <div className="space-y-1">
-                            {dayEvents.slice(0, 3).map((event, eventIndex) => (
-                              <DraggableEvent
-                                key={event.id}
-                                event={event}
-                                index={eventIndex}
-                                onClick={onEventClick}
-                                isDraggable={isInteractable && !!onEventDrop} // Só arrastável se for interativo
-                              />
-                            ))}
-
-                            {dayEvents.length > 3 && (
-                              <div className="text-xs text-gray-500 font-medium px-2 py-1 bg-gray-100 dark:bg-zinc-700 rounded-md mt-1">
-                                +{dayEvents.length - 3} mais
-                              </div>
-                            )}
-
-                            {provided.placeholder}
-                          </div>
-                        </>
-                      ) : (
-                        // Conteúdo vazio para dias fora do mês atual
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold mb-3 text-gray-400">
-                          {date.getDate()}
-                        </div>
+                      {onAddNewEvent && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute top-2 right-2 h-7 w-7 rounded-full opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 bg-background/60 backdrop-blur-sm shadow-sm hover:bg-gray-100"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAddNewEvent(date);
+                          }}
+                          aria-label="Adicionar novo evento"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
                       )}
+
+                      <div className={cn(
+                        "flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold mb-3 transition-all duration-300",
+                        isToday(date) && "bg-blue-600 text-white shadow-lg",
+                        "text-gray-800"
+                      )}>
+                        {date.getDate()}
+                      </div>
+
+                      <div className="space-y-1">
+                        {dayEvents.slice(0, 3).map((event, eventIndex) => (
+                          <DraggableEvent
+                            key={event.id}
+                            event={event}
+                            index={eventIndex}
+                            onClick={onEventClick}
+                            isDraggable={!!onEventDrop}
+                          />
+                        ))}
+
+                        {dayEvents.length > 3 && (
+                          <div className="text-xs text-gray-500 font-medium px-2 py-1 bg-gray-100 dark:bg-zinc-700 rounded-md mt-1">
+                            +{dayEvents.length - 3} mais
+                          </div>
+                        )}
+
+                        {provided.placeholder}
+                      </div>
                     </div>
                   )}
                 </Droppable>
