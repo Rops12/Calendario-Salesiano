@@ -1,10 +1,12 @@
 // src/hooks/usePdfExport.ts
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { format, startOfMonth, getDay, getYear, getMonth, eachDayOfInterval } from 'date-fns';
+import { format, getYear } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarEvent, EventCategory } from '@/types/calendar'; // Corrigido
-import { useCategories } from '@/hooks/useCategories.tsx'; // Adicionado
+import { CalendarEvent, EventCategory } from '@/types/calendar';
+import { useCategories } from '@/hooks/useCategories.tsx';
+import html2canvas from 'html2canvas';
+import { toast } from 'sonner';
 
 export const usePdfExport = (
   allEvents: CalendarEvent[],
@@ -12,10 +14,10 @@ export const usePdfExport = (
 ) => {
   const { getCategory } = useCategories();
 
-  // Função interna para obter a cor hexadecimal a partir de HSL
+  // Função para converter HSL para Hex, necessário para o jsPDF
   const hslToHex = (h: number, s: number, l: number): string => {
     l /= 100;
-    const a = s * Math.min(l, 1 - l) / 100;
+    const a = (s * Math.min(l, 1 - l)) / 100;
     const f = (n: number) => {
       const k = (n + h / 30) % 12;
       const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
@@ -23,125 +25,155 @@ export const usePdfExport = (
     };
     return `#${f(0)}${f(8)}${f(4)}`;
   };
-  
+
   const parseHsl = (hsl: string): [number, number, number] | null => {
     const match = hsl.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
     if (match) {
       return [parseInt(match[1]), parseInt(match[2]), parseInt(match[3])];
     }
+    const singleValueMatch = hsl.match(/hsl\(([\d\s%]+)\)/);
+    if (singleValueMatch) {
+        const values = singleValueMatch[1].split(' ').map(s => parseFloat(s));
+        if (values.length === 3) {
+            return [values[0], values[1], values[2]];
+        }
+    }
     return null;
   };
-  
+
   const getCategoryColorHex = (categoryValue: string): string => {
-      const category = getCategory(categoryValue);
-      if (category && category.color) {
-        const hslValues = parseHsl(category.color);
-        if (hslValues) {
-          return hslToHex(...hslValues);
-        }
+    const category = getCategory(categoryValue);
+    if (category?.color) {
+      const hslValues = parseHsl(category.color);
+      if (hslValues) {
+        return hslToHex(...hslValues);
       }
-      return '#d1d5db'; // Cinza como fallback
-  };
-
-  const exportFullYearToPdf = (year: number) => {
-    const doc = new jsPDF('p', 'pt', 'a4');
-    const filteredEvents = allEvents.filter(event => selectedCategories.includes(event.category));
-    doc.setFontSize(24);
-    doc.text(`Calendário Salesiano - ${year}`, doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
-    for (let i = 0; i < 12; i++) {
-      const currentDate = new Date(year, i, 1);
-      if (i > 0) doc.addPage();
-      generateMonthPage(doc, currentDate, filteredEvents);
     }
-    doc.save(`calendario-completo-${year}.pdf`);
-  };
-  
-  const exportMonthToPdf = (currentDate: Date) => {
-    const doc = new jsPDF('p', 'pt', 'a4');
-    const filteredEvents = allEvents.filter(event => selectedCategories.includes(event.category));
-    generateMonthPage(doc, currentDate, filteredEvents);
-    const monthName = format(currentDate, 'MMMM', { locale: ptBR });
-    const year = getYear(currentDate);
-    doc.save(`calendario-${monthName}-${year}.pdf`);
+    return '#D1D5DB'; // Cor de fallback (cinza)
   };
 
-  const generateMonthPage = (doc: jsPDF, currentDate: Date, events: CalendarEvent[]) => {
-    const monthName = format(currentDate, 'MMMM yyyy', { locale: ptBR });
-    const daysOfWeek = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-    
-    const gridStartDate = startOfMonth(currentDate);
-    gridStartDate.setDate(gridStartDate.getDate() - getDay(gridStartDate));
-    const gridEndDate = new Date(gridStartDate);
-    gridEndDate.setDate(gridEndDate.getDate() + 41);
-    
-    const daysInGrid = eachDayOfInterval({ start: gridStartDate, end: gridEndDate });
+  // Função para criar o cabeçalho de cada página do PDF
+  const addHeader = (doc: jsPDF, title: string) => {
+    doc.setFontSize(22);
+    doc.setTextColor('#1E3A8A'); // Azul Salesiano
+    doc.text('Calendário Salesiano', doc.internal.pageSize.getWidth() / 2, 45, { align: 'center' });
 
-    const getEventsForDate = (date: Date) => {
-      const dateStr = format(date, 'yyyy-MM-dd');
-      return events.filter(event => {
-        const eventStartDate = event.startDate.split('T')[0];
-        const eventEndDate = event.endDate ? event.endDate.split('T')[0] : eventStartDate;
-        return dateStr >= eventStartDate && dateStr <= eventEndDate;
-      }).sort((a, b) => a.title.localeCompare(b.title));
-    };
+    doc.setFontSize(16);
+    doc.setTextColor('#4B5563');
+    doc.text(title, doc.internal.pageSize.getWidth() / 2, 70, { align: 'center' });
+  };
+
+  // Função para criar o rodapé
+  const addFooter = (doc: jsPDF) => {
+    const pageCount = doc.internal.getNumberOfPages();
+    doc.setFontSize(8);
+    doc.setTextColor('#6B7280');
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.text(
+        `Página ${i} de ${pageCount}`,
+        doc.internal.pageSize.getWidth() / 2,
+        doc.internal.pageSize.getHeight() - 20,
+        { align: 'center' }
+      );
+    }
+  };
+
+  const generatePdfForMonth = async (doc: jsPDF, date: Date, events: CalendarEvent[]) => {
+    const monthName = format(date, "MMMM 'de' yyyy", { locale: ptBR });
+    addHeader(doc, monthName.charAt(0).toUpperCase() + monthName.slice(1));
     
-    const body = [];
-    let week: any[] = [];
-    daysInGrid.forEach((day, index) => {
-      const dayData = { date: day, events: getEventsForDate(day), isCurrentMonth: getMonth(day) === getMonth(currentDate) };
-      week.push(dayData);
-      if ((index + 1) % 7 === 0) { body.push(week); week = []; }
+    const tableBody = events.map(event => {
+      const category = getCategory(event.category);
+      const startDate = format(new Date(event.startDate + 'T00:00:00'), 'dd/MM/yyyy');
+      const endDate = event.endDate ? format(new Date(event.endDate + 'T00:00:00'), 'dd/MM/yyyy') : startDate;
+      const dateRange = startDate === endDate ? startDate : `${startDate} - ${endDate}`;
+      
+      return [
+        { content: dateRange, styles: { fontStyle: 'bold' } },
+        { content: event.title },
+        { content: category?.label || event.category }
+      ];
     });
-
-    doc.setFontSize(18);
-    doc.text(monthName.charAt(0).toUpperCase() + monthName.slice(1), doc.internal.pageSize.getWidth() / 2, 80, { align: 'center' });
 
     autoTable(doc, {
       startY: 100,
-      head: [daysOfWeek],
-      body: body,
+      head: [['Data', 'Evento', 'Segmento']],
+      body: tableBody,
       theme: 'grid',
-      headStyles: { fillColor: [3, 105, 161], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
-      styles: { cellPadding: 0, minCellHeight: 65 },
-      didDrawCell: (data) => {
-        if (data.section === 'head') return;
-        const dayData = data.cell.raw as { date: Date; events: CalendarEvent[]; isCurrentMonth: boolean };
-        if (!dayData || !dayData.date) return;
-        const { date, events, isCurrentMonth } = dayData;
-        const dayNumber = format(date, 'd');
-        if (!isCurrentMonth) {
-            doc.setFillColor(243, 244, 246);
-            doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F');
-        }
-        doc.setTextColor(isCurrentMonth ? '#111827' : '#9ca3af');
-        doc.setFontSize(10);
-        doc.text(dayNumber, data.cell.x + 5, data.cell.y + 12);
-        let eventY = data.cell.y + 20;
-        const eventX = data.cell.x + 4, eventWidth = data.cell.width - 8, eventHeight = 14, maxEvents = 3;
-        events.slice(0, maxEvents).forEach((event) => {
-          if (eventY + eventHeight > data.cell.y + data.cell.height - 5) return;
-          
-          const color = getCategoryColorHex(event.category);
-          doc.setFillColor(color);
-
-          doc.roundedRect(eventX, eventY, eventWidth, eventHeight, 3, 3, 'F');
-          doc.setTextColor('#ffffff');
-          doc.setFontSize(8);
-          doc.setFont('helvetica', 'bold');
-          const truncatedTitle = doc.splitTextToSize(event.title, eventWidth - 8);
-          doc.text(truncatedTitle[0], eventX + 4, eventY + 9);
-          eventY += eventHeight + 4;
-        });
-        if (events.length > maxEvents) {
-          doc.setTextColor('#6b7280');
-          doc.setFontSize(7);
-          doc.text(`+${events.length - maxEvents} mais...`, eventX + 4, eventY + 9);
-        }
+      headStyles: {
+        fillColor: '#2563EB', // Azul primário
+        textColor: '#FFFFFF',
+        fontStyle: 'bold'
       },
-      willDrawCell: (data) => {
-        if (data.section === 'body') data.cell.text = [];
+      styles: {
+        fontSize: 9,
+        cellPadding: 6,
+        valign: 'middle'
+      },
+      columnStyles: {
+        0: { cellWidth: 110 },
+        2: { cellWidth: 100 },
+      },
+      didParseCell: (data) => {
+        // Colore a célula do segmento de acordo com a categoria
+        if (data.column.index === 2 && data.row.section === 'body') {
+            const event = events[data.row.index];
+            if (event) {
+                data.cell.styles.fillColor = getCategoryColorHex(event.category);
+                data.cell.styles.textColor = '#FFFFFF';
+                data.cell.styles.fontStyle = 'bold';
+            }
+        }
       }
     });
+  };
+
+  const exportMonthToPdf = async (currentDate: Date) => {
+    toast.info('Gerando PDF do mês, por favor aguarde...');
+    const doc = new jsPDF({
+      orientation: 'p',
+      unit: 'pt',
+      format: 'a4'
+    });
+    
+    const monthEvents = allEvents.filter(event => {
+      const eventDate = new Date(event.startDate + 'T00:00:00');
+      return eventDate.getMonth() === currentDate.getMonth() &&
+             eventDate.getFullYear() === currentDate.getFullYear() &&
+             selectedCategories.includes(event.category);
+    });
+    
+    await generatePdfForMonth(doc, currentDate, monthEvents);
+    addFooter(doc);
+
+    const monthName = format(currentDate, 'MMMM-yyyy', { locale: ptBR });
+    doc.save(`calendario-${monthName}.pdf`);
+    toast.success('PDF do mês gerado com sucesso!');
+  };
+
+  const exportFullYearToPdf = async (year: number) => {
+    toast.info('Gerando PDF do ano completo. Isso pode levar um momento...');
+    const doc = new jsPDF('p', 'pt', 'a4');
+    
+    for (let month = 0; month < 12; month++) {
+      if (month > 0) {
+        doc.addPage();
+      }
+      
+      const monthEvents = allEvents.filter(event => {
+        const eventDate = new Date(event.startDate + 'T00:00:00');
+        return eventDate.getMonth() === month &&
+               eventDate.getFullYear() === year &&
+               selectedCategories.includes(event.category);
+      });
+      
+      await generatePdfForMonth(doc, new Date(year, month, 1), monthEvents);
+    }
+    
+    addFooter(doc);
+    doc.save(`calendario-completo-${year}.pdf`);
+    toast.success('PDF do ano completo gerado com sucesso!');
   };
 
   return { exportMonthToPdf, exportFullYearToPdf };
