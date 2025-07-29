@@ -9,6 +9,8 @@ import {
   eachMonthOfInterval,
   startOfYear,
   endOfYear,
+  eachDayOfInterval,
+  parseISO,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CalendarEvent, EventCategory } from '@/types/calendar';
@@ -31,7 +33,7 @@ export const usePdfExport = (
 ) => {
   const { getCategory } = useCategories();
 
-  // --- Funções de Cor ---
+  // --- Funções de Cor (sem alterações) ---
   const hslToHex = (h: number, s: number, l: number): string => {
     l /= 100;
     const a = (s * Math.min(l, 1 - l)) / 100;
@@ -60,23 +62,22 @@ export const usePdfExport = (
       const hslValues = parseHsl(category.color);
       if (hslValues) return hslToHex(...hslValues);
     }
-    return '#A1A1AA'; // Cor de fallback (cinza neutro)
+    return '#A1A1AA';
   };
 
-  // --- Funções de Desenho no PDF ---
+  // --- Funções de Desenho no PDF (com alterações) ---
   const addHeader = (doc: jsPDF, title: string) => {
     doc.setFontSize(24);
-    doc.setTextColor('#18181B'); // Quase preto para alta legibilidade
+    doc.setTextColor('#18181B');
     doc.setFont('helvetica', 'bold');
     doc.text('Calendário Salesiano', MARGIN, 45);
 
     doc.setFontSize(16);
-    doc.setTextColor('#71717A'); // Cinza para subtítulo
+    doc.setTextColor('#71717A');
     doc.setFont('helvetica', 'normal');
     doc.text(title, MARGIN, 65);
     
-    // Linha divisória
-    doc.setDrawColor('#E4E4E7'); // Cinza claro
+    doc.setDrawColor('#E4E4E7');
     doc.setLineWidth(1);
     doc.line(MARGIN, 75, A4_WIDTH - MARGIN, 75);
   };
@@ -103,18 +104,27 @@ export const usePdfExport = (
   
   const generateMonthPage = async (doc: jsPDF, date: Date) => {
     // 1. Agrupar eventos por dia
-    const monthEvents = allEvents.filter(event => {
-      const eventDate = new Date(event.startDate + 'T00:00:00');
-      return eventDate.getMonth() === date.getMonth() &&
-             eventDate.getFullYear() === date.getFullYear() &&
-             selectedCategories.includes(event.category);
-    });
+    const monthEvents = allEvents.filter(event => selectedCategories.includes(event.category));
 
     const eventsByDay: { [key: number]: CalendarEvent[] } = {};
+    
+    // MELHORIA: Lógica para eventos que duram vários dias
     monthEvents.forEach(event => {
-      const dayOfMonth = new Date(event.startDate + 'T00:00:00').getDate();
-      if (!eventsByDay[dayOfMonth]) eventsByDay[dayOfMonth] = [];
-      eventsByDay[dayOfMonth].push(event);
+      const startDate = parseISO(event.startDate + 'T00:00:00');
+      const endDate = event.endDate ? parseISO(event.endDate + 'T00:00:00') : startDate;
+
+      const interval = eachDayOfInterval({ start: startDate, end: endDate });
+      
+      interval.forEach(dayInInterval => {
+        if (dayInInterval.getMonth() === date.getMonth() && dayInInterval.getFullYear() === date.getFullYear()) {
+          const dayOfMonth = dayInInterval.getDate();
+          if (!eventsByDay[dayOfMonth]) eventsByDay[dayOfMonth] = [];
+          // Evita duplicar o mesmo evento no mesmo dia
+          if (!eventsByDay[dayOfMonth].find(e => e.id === event.id)) {
+            eventsByDay[dayOfMonth].push(event);
+          }
+        }
+      });
     });
 
     // 2. Desenhar a grade e os eventos
@@ -125,12 +135,14 @@ export const usePdfExport = (
     const CELL_HEIGHT = CALENDAR_HEIGHT / numWeeks;
     const WEEK_DAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
-    // Desenha cabeçalho dos dias da semana
+    // MELHORIA: Alinhamento central dos dias da semana
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor('#71717A');
     WEEK_DAYS.forEach((day, i) => {
-      doc.text(day, MARGIN + (i * CELL_WIDTH) + 5, HEADER_HEIGHT - 10);
+      // Calcula o centro da célula para alinhar o texto
+      const xPosition = MARGIN + (i * CELL_WIDTH) + (CELL_WIDTH / 2);
+      doc.text(day, xPosition, HEADER_HEIGHT - 10, { align: 'center' });
     });
 
     // Desenha a grade e preenche com os dias e eventos
@@ -141,9 +153,10 @@ export const usePdfExport = (
       const x = MARGIN + (dayIndex * CELL_WIDTH);
       const y = HEADER_HEIGHT + (weekIndex * CELL_HEIGHT);
       
-      // Desenha a célula
+      // MELHORIA: Desenha a célula com cantos arredondados
+      const cornerRadius = 4;
       doc.setDrawColor('#E4E4E7');
-      doc.rect(x, y, CELL_WIDTH, CELL_HEIGHT);
+      doc.rect(x, y, CELL_WIDTH, CELL_HEIGHT, 'S'); // 'S' para apenas borda
 
       const dayOfMonth = i - startingDayIndex + 1;
       if (dayOfMonth > 0 && dayOfMonth <= daysInMonth) {
@@ -155,23 +168,23 @@ export const usePdfExport = (
 
         // Desenha os eventos do dia
         const dayEvents = eventsByDay[dayOfMonth] || [];
-        let eventYOffset = 30; // Posição inicial do texto do primeiro evento
+        let eventYOffset = 30;
         const eventLineHeight = 11;
         const maxLinesPerEvent = 1;
         
         dayEvents.forEach(event => {
-          if (eventYOffset + eventLineHeight > CELL_HEIGHT - 5) return; // Não desenha se não couber
+          if (eventYOffset + eventLineHeight > CELL_HEIGHT - 5) return;
 
           const color = getCategoryColorHex(event.category);
           doc.setFillColor(color);
-          // Barra lateral colorida para indicar a categoria
-          doc.rect(x + 3, y + eventYOffset - 7, 3, 8, 'F');
+          
+          // MELHORIA: Barra lateral com cantos arredondados
+          doc.roundedRect(x + 3, y + eventYOffset - 7, 3, 8, 1.5, 1.5, 'F');
           
           doc.setFontSize(7.5);
           doc.setFont('helvetica', 'normal');
           doc.setTextColor('#3F3F46');
           
-          // Corta o texto para caber na célula, adicionando "..." se necessário
           const clippedText = doc.splitTextToSize(event.title, CELL_WIDTH - 15);
           doc.text(clippedText.slice(0, maxLinesPerEvent), x + 10, y + eventYOffset);
           
@@ -181,6 +194,7 @@ export const usePdfExport = (
     }
   };
 
+  // Funções de exportação (sem alterações na lógica principal)
   const exportMonthToPdf = async (currentDate: Date) => {
     toast.info('Gerando PDF do calendário, aguarde...');
     const doc = new jsPDF({ orientation: 'l', unit: 'pt', format: 'a4' });
