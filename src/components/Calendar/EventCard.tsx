@@ -31,12 +31,12 @@ export function EventCard({ event, onClick, className }: EventCardProps) {
   } as React.CSSProperties;
 
   const getEventCardClasses = () => {
-    // AJUSTE: Removemos a borda e adicionamos uma sombra sutil
     const baseStyles = "group/card px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 break-words whitespace-normal leading-tight cursor-pointer border-l-4 flex items-start gap-2 shadow-sm hover:shadow-md";
 
     // Estilos para eventos especiais
     if (event.eventType === 'feriado') return cn(baseStyles, "bg-red-100/80 text-red-900 border-l-red-500 font-semibold hover:bg-red-200");
-    if (event.eventType === 'recesso') return cn(baseStyles, "bg-amber-100/80 text-amber-900 border-l-amber-500 font-semibold hover:bg-amber-200");
+    // AJUSTE: Alterado de 'amber' para 'orange' para um tom mais alaranjado
+    if (event.eventType === 'recesso') return cn(baseStyles, "bg-orange-100/80 text-orange-900 border-l-orange-500 font-semibold hover:bg-orange-200");
     if (event.eventType === 'evento') return cn(baseStyles, "bg-yellow-100/80 text-yellow-900 border-l-yellow-500 font-semibold hover:bg-yellow-200");
 
     // Estilo para eventos normais
@@ -66,8 +66,9 @@ export function EventCard({ event, onClick, className }: EventCardProps) {
     switch (event.eventType) {
       case 'feriado':
         return cn(base, "text-red-700");
+      // AJUSTE: Alterado de 'amber' para 'orange'
       case 'recesso':
-        return cn(base, "text-amber-700");
+        return cn(base, "text-orange-700");
       case 'evento':
         return cn(base, "text-yellow-700");
       default: // Evento 'normal'
