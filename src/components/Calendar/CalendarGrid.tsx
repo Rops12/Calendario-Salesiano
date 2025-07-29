@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { useFloatingPanel } from '@/components/ui/floating-panel';
 import { format, isSameMonth, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { ptBR } from 'date-fns/locale'; // Importação para o idioma português
 
 interface CalendarGridProps {
   currentDate: Date;
@@ -63,11 +64,8 @@ export function CalendarGrid({
   };
 
   const getDayCardStyles = (date: Date, eventType: string | null) => {
-    const baseClasses = "relative group flex flex-col p-3 rounded-xl shadow-sm transition-all duration-300 min-h-[10rem]"; // Removido cursor-pointer
+    const baseClasses = "relative group flex flex-col p-3 rounded-xl shadow-sm transition-all duration-300 min-h-[10rem]";
     const hoverClasses = "hover:shadow-xl hover:-translate-y-1";
-    
-    // O estilo para dias de outro mês foi removido na iteração anterior,
-    // e agora trataremos a interatividade diretamente na renderização.
     
     if (eventType === 'feriado') {
       return cn(baseClasses, "bg-red-50 text-red-800", hoverClasses, "hover:bg-red-100");
@@ -88,7 +86,8 @@ export function CalendarGrid({
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="bg-gray-50">
-        <div className="px-4 sm:px-6 py-6">
+        {/* AJUSTE 1: Padding superior reduzido em telas pequenas para remover o espaço */}
+        <div className="px-4 sm:px-6 pb-6 pt-2 sm:py-6">
           <div className="hidden md:grid grid-cols-7 gap-4 mb-4">
             {daysOfWeek.map((day) => (
               <div key={day} className="text-center font-semibold text-gray-700 py-3">{day}</div>
@@ -97,15 +96,14 @@ export function CalendarGrid({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-4">
             {days.map((date, index) => {
+              // AJUSTE 1: Oculta os dias de outros meses em telas pequenas (mobile)
               if (!isCurrentMonth(date)) {
-                // Renderiza um contêiner vazio para os dias que não são do mês atual
-                return <div key={index} className="min-h-[10rem] bg-transparent"></div>;
+                return <div key={index} className="hidden md:block"></div>;
               }
 
               const dayEvents = getEventsForDate(date);
               const dateStr = format(date, 'yyyy-MM-dd');
               const specialEventType = getSpecialEventType(date);
-              
               const isInteractable = isCurrentMonth(date);
 
               return (
@@ -121,23 +119,33 @@ export function CalendarGrid({
                     >
                       {onAddNewEvent && (
                         <Button
-                          variant="ghost"
-                          size="icon"
+                          variant="ghost" size="icon"
                           className="absolute top-2 right-2 h-7 w-7 rounded-full opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 bg-background/60 backdrop-blur-sm shadow-sm hover:bg-gray-100"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onAddNewEvent(date);
-                          }}
+                          onClick={(e) => { e.stopPropagation(); onAddNewEvent(date); }}
                           aria-label="Adicionar novo evento"
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
                       )}
 
+                      {/* AJUSTE 2: Cabeçalho do Card Responsivo */}
+                      {/* Cabeçalho para Mobile (Visível até o breakpoint 'md') */}
+                      <div className="md:hidden flex justify-between items-center mb-2 pb-2 border-b border-gray-200/80">
+                        <span className="font-bold text-sm capitalize text-gray-700">
+                          {format(date, 'EEEE', { locale: ptBR })}
+                        </span>
+                        <div className={cn(
+                          "flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold",
+                          isToday(date) && "bg-blue-600 text-white shadow-md"
+                        )}>
+                          {date.getDate()}
+                        </div>
+                      </div>
+
+                      {/* Cabeçalho para Desktop (Oculto até o breakpoint 'md') */}
                       <div className={cn(
-                        "flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold mb-3 transition-all duration-300",
-                        isToday(date) && "bg-blue-600 text-white shadow-lg",
-                        "text-gray-800"
+                        "hidden md:flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold mb-3 transition-all duration-300",
+                        isToday(date) && "bg-blue-600 text-white shadow-lg", "text-gray-800"
                       )}>
                         {date.getDate()}
                       </div>
@@ -145,20 +153,15 @@ export function CalendarGrid({
                       <div className="space-y-1">
                         {dayEvents.slice(0, 3).map((event, eventIndex) => (
                           <DraggableEvent
-                            key={event.id}
-                            event={event}
-                            index={eventIndex}
-                            onClick={onEventClick}
-                            isDraggable={!!onEventDrop}
+                            key={event.id} event={event} index={eventIndex}
+                            onClick={onEventClick} isDraggable={!!onEventDrop}
                           />
                         ))}
-
                         {dayEvents.length > 3 && (
-                          <div className="text-xs text-gray-500 font-medium px-2 py-1 bg-gray-100 dark:bg-zinc-700 rounded-md mt-1">
+                          <div className="text-xs text-gray-500 font-medium px-2 py-1 bg-gray-100 rounded-md mt-1">
                             +{dayEvents.length - 3} mais
                           </div>
                         )}
-
                         {provided.placeholder}
                       </div>
                     </div>
