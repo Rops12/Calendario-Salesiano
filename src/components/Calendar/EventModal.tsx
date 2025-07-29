@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { X } from 'lucide-react';
+import { format } from 'date-fns'; // Importar format
 
 interface EventModalProps {
   isOpen: boolean;
@@ -61,8 +62,8 @@ export function EventModal({
       setFormData({
         title: event.title,
         description: event.description || '',
-        startDate: event.startDate.split('T')[0],
-        endDate: event.endDate ? event.endDate.split('T')[0] : '',
+        startDate: event.startDate,
+        endDate: event.endDate || '',
         category: event.category,
         eventType: event.eventType
       });
@@ -70,7 +71,8 @@ export function EventModal({
       setFormData({
         title: '',
         description: '',
-        startDate: selectedDate.toISOString().split('T')[0],
+        // CORREÇÃO: Usar format para evitar problemas de fuso horário
+        startDate: format(selectedDate, 'yyyy-MM-dd'),
         endDate: '',
         category: defaultCategory,
         eventType: 'normal'
@@ -79,7 +81,7 @@ export function EventModal({
       setFormData({
         title: '',
         description: '',
-        startDate: new Date().toISOString().split('T')[0],
+        startDate: format(new Date(), 'yyyy-MM-dd'),
         endDate: '',
         category: defaultCategory,
         eventType: 'normal'
@@ -153,7 +155,6 @@ export function EventModal({
             aria-modal="true"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* CORREÇÃO: Adicionado 'h-full' e 'overflow-hidden' para garantir que o layout flex funcione corretamente */}
             <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
               <header className="flex items-center justify-between p-4 border-b shrink-0">
                 <h3 className="font-semibold text-lg">{isReadOnly ? 'Visualizar Evento' : (event ? 'Editar Evento' : 'Novo Evento')}</h3>
@@ -213,7 +214,6 @@ export function EventModal({
                 </div>
               </div>
 
-              {/* CORREÇÃO: Removido 'mt-auto' e adicionado 'shrink-0' para garantir que o rodapé não seja empurrado para fora */}
               <footer className="flex justify-between w-full p-4 border-t bg-background shrink-0">
                 <div>
                   {!isReadOnly && event && onDelete && (<Button type="button" variant="destructive" onClick={handleDelete}>Excluir</Button>)}
