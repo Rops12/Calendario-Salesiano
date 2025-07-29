@@ -1,18 +1,17 @@
-// src/components/Calendar/WeekView.tsx
-
 import { CalendarEvent, EventCategory } from '@/types/calendar';
 import { cn } from '@/lib/utils';
 import { EventCard } from './EventCard';
-import { useFloatingPanel } from '@/components/ui/floating-panel'; // Importe o hook
+import { useFloatingPanel } from '@/components/ui/floating-panel';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useMobile } from '@/hooks/use-mobile';
 
 interface WeekViewProps {
   currentDate: Date;
   events: CalendarEvent[];
   selectedCategories: EventCategory[];
   onEventClick: (event: CalendarEvent) => void;
-  onDateClick?: (date: Date) => void; // Mantido para outras interações
+  onDateClick?: (date: Date) => void;
 }
 
 export function WeekView({
@@ -21,8 +20,8 @@ export function WeekView({
   selectedCategories,
   onEventClick,
 }: WeekViewProps) {
-  const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-  const { openFloatingPanel } = useFloatingPanel(); // Utilize o hook
+  const { openFloatingPanel } = useFloatingPanel();
+  const isMobile = useMobile();
 
   const startOfWeek = new Date(currentDate);
   startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
@@ -43,7 +42,6 @@ export function WeekView({
     return events.filter(event => {
       const eventStartDate = event.startDate.split('T')[0];
       const eventEndDate = event.endDate ? event.endDate.split('T')[0] : eventStartDate;
-
       return dateStr >= eventStartDate && dateStr <= eventEndDate && selectedCategories.includes(event.category);
     }).sort((a, b) => a.title.localeCompare(b.title));
   };
@@ -55,47 +53,43 @@ export function WeekView({
     return null;
   };
 
-  // Estilos dos cards atualizados para refletir o design mobile da CalendarGrid
   const getDayCardStyles = (date: Date) => {
-    const baseStyles = "group relative min-h-[400px] p-3 rounded-xl transition-all duration-200 hover:shadow-lg hover:-translate-y-1 border flex flex-col cursor-pointer";
+    const baseStyles = "group relative p-3 rounded-xl transition-colors duration-200 border flex flex-col min-h-[150px]";
     const specialEventType = getSpecialEventType(date);
 
-    if (isToday(date)) {
-      return cn(baseStyles, "bg-blue-50 border-blue-200 shadow-blue-100");
-    }
-
-    if (specialEventType === 'feriado') {
-      return cn(baseStyles, "bg-red-50 border-red-200");
-    }
-    if (specialEventType === 'recesso') {
-      return cn(baseStyles, "bg-orange-50 border-orange-200");
-    }
-
-    return cn(baseStyles, "bg-white border-gray-200 hover:border-gray-300 shadow-sm");
+    if (isToday(date)) return cn(baseStyles, "bg-blue-50 border-blue-200");
+    if (specialEventType === 'feriado') return cn(baseStyles, "bg-red-50 border-red-200");
+    if (specialEventType === 'recesso') return cn(baseStyles, "bg-orange-50 border-orange-200");
+    return cn(baseStyles, "bg-white border-gray-200");
   };
 
   return (
-    <div className="bg-gray-50 p-6 animate-fade-in">
+    <div className="bg-gray-50 p-2 sm:p-4 md:p-6 animate-fade-in">
+        <div className="hidden md:grid grid-cols-7 gap-4 mb-2">
+            {weekDays.map((day) => (
+                <div key={day.toISOString()} className="text-center font-bold text-gray-600 capitalize">
+                    {format(day, 'EEEE', { locale: ptBR })}
+                </div>
+            ))}
+        </div>
+
       <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
         {weekDays.map((day, dayIndex) => {
           const dayEvents = getEventsForDate(day);
-
           return (
             <div
               key={dayIndex}
               className={getDayCardStyles(day)}
-              // Ação de clique para abrir o floating-panel
               onClick={(e) => {
-                openFloatingPanel(e.currentTarget.getBoundingClientRect(), day, dayEvents);
+                if (isMobile) {
+                  openFloatingPanel(e.currentTarget.getBoundingClientRect(), day, dayEvents);
+                }
               }}
             >
-              {/* Cabeçalho do card, similar ao da CalendarGrid no mobile */}
-              <div className="flex md:items-center items-baseline gap-2 mb-3 pb-2 md:pb-0 md:border-b-0 border-b">
-                <span className="text-sm font-semibold text-gray-500 md:hidden">{daysOfWeek[dayIndex]}</span>
+              <div className="flex items-center gap-2 mb-3 pb-2 border-b">
                 <div className={cn(
-                  "flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold transition-all duration-200",
-                  "text-xl md:text-sm", // Tamanho de fonte diferente para mobile e desktop
-                  isToday(day) ? "bg-blue-600 text-white shadow-lg" : "text-gray-800"
+                  "flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold",
+                  isToday(day) ? "bg-blue-600 text-white" : "text-gray-800"
                 )}>
                   {day.getDate()}
                 </div>
@@ -104,17 +98,12 @@ export function WeekView({
                 </span>
               </div>
 
-
               <div className="space-y-1 flex-grow overflow-y-auto">
                 {dayEvents.map((event) => (
                   <EventCard
                     key={event.id}
                     event={event}
-                    onClick={(clickedEvent) => {
-                        // Impede que o clique no card do evento propague para o card do dia
-                        event.stopPropagation();
-                        onEventClick(clickedEvent)
-                    }}
+                    onClick={onEventClick}
                   />
                 ))}
               </div>
