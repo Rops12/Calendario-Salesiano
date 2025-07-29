@@ -96,7 +96,6 @@ export const usePdfExport = (
       activeCategories.forEach(category => {
         const color = getCategoryColorHex(category.value);
         const labelWidth = doc.getTextWidth(category.label) + 20;
-        // Evita que a legenda saia da página
         if (legendX + labelWidth > A4_WIDTH - MARGIN) return; 
 
         doc.setFillColor(color);
@@ -123,25 +122,31 @@ export const usePdfExport = (
   };
   
   const generateMonthPage = async (doc: jsPDF, date: Date) => {
-    // 1. Agrupar eventos (sem alterações)
-    const monthEvents = allEvents.filter(event => selectedCategories.includes(event.category));
+    // 1. Agrupar eventos por dia
     const eventsByDay: { [key: number]: CalendarEvent[] } = {};
-    monthEvents.forEach(event => {
-      const startDate = parseISO(event.startDate + 'T00:00:00');
-      const endDate = event.endDate ? parseISO(event.endDate + 'T00:00:00') : startDate;
-      const interval = eachDayOfInterval({ start: startDate, end: endDate });
-      interval.forEach(dayInInterval => {
-        if (dayInInterval.getMonth() === date.getMonth() && dayInInterval.getFullYear() === date.getFullYear()) {
-          const dayOfMonth = dayInInterval.getDate();
-          if (!eventsByDay[dayOfMonth]) eventsByDay[dayOfMonth] = [];
-          if (!eventsByDay[dayOfMonth].find(e => e.id === event.id)) {
-            eventsByDay[dayOfMonth].push(event);
+    
+    // CORREÇÃO: A filtragem de `selectedCategories` foi movida para DENTRO deste loop.
+    // Isso garante que a lógica de `eachDayOfInterval` funcione para todos os eventos primeiro.
+    allEvents
+      .filter(event => selectedCategories.includes(event.category))
+      .forEach(event => {
+        const startDate = parseISO(event.startDate + 'T00:00:00');
+        const endDate = event.endDate ? parseISO(event.endDate + 'T00:00:00') : startDate;
+
+        const interval = eachDayOfInterval({ start: startDate, end: endDate });
+        
+        interval.forEach(dayInInterval => {
+          if (dayInInterval.getMonth() === date.getMonth() && dayInInterval.getFullYear() === date.getFullYear()) {
+            const dayOfMonth = dayInInterval.getDate();
+            if (!eventsByDay[dayOfMonth]) eventsByDay[dayOfMonth] = [];
+            if (!eventsByDay[dayOfMonth].find(e => e.id === event.id)) {
+              eventsByDay[dayOfMonth].push(event);
+            }
           }
-        }
-      });
+        });
     });
 
-    // 2. Desenhar a grade e os eventos
+    // 2. Desenhar a grade e os eventos (sem alterações daqui para baixo nesta função)
     const firstDayOfMonth = startOfMonth(date);
     const startingDayIndex = getDay(firstDayOfMonth);
     const daysInMonth = getDaysInMonth(date);
@@ -176,12 +181,9 @@ export const usePdfExport = (
         const dayEvents = eventsByDay[dayOfMonth] || [];
         let eventYOffset = 30;
         const eventLineHeight = 10;
-        // AJUSTE 1: Mudar para até 3 linhas
         const maxLinesPerEvent = 3; 
         
         dayEvents.forEach(event => {
-          // AJUSTE 1: Aumentamos um pouco a margem de segurança na largura do texto (CELL_WIDTH - 18)
-          // Isso evita que o jsPDF quebre a linha prematuramente.
           const clippedText = doc.splitTextToSize(event.title, CELL_WIDTH - 18);
           const linesForThisEvent = clippedText.slice(0, maxLinesPerEvent);
           
