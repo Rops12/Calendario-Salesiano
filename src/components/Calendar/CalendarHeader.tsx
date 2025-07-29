@@ -139,7 +139,7 @@ export function CalendarHeader({
           {/* Botões de Ação (Desktop e Mobile) */}
           <div className="flex items-center gap-2">
             {onNewEvent && (
-              <Button onClick={onNewEvent} className="bg-white text-[#4F46E5] hover:bg-white/90 font-semibold">
+              <Button onClick={() => onNewEvent()} className="bg-white text-[#4F46E5] hover:bg-white/90 font-semibold">
                 <Plus className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Nova Atividade</span>
               </Button>
