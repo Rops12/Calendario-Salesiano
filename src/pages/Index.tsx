@@ -38,6 +38,7 @@ const Index = () => {
   const params = useParams();
   const { categories } = useCategories();
   const { isAuthenticated } = useAuth();
+  const floatingPanel = FloatingPanel.useFloatingPanel();
 
   const [currentDate, setCurrentDate] = useState(() => {
     const dateParam = params.date;
@@ -113,11 +114,17 @@ const Index = () => {
   };
 
   const handleEventClick = (event: CalendarEvent) => {
+    if (floatingPanel.isOpen) {
+      floatingPanel.closeFloatingPanel();
+    }
     setSelectedEvent(event);
     setIsModalOpen(true);
   };
 
   const handleNewEvent = (date?: Date) => {
+    if (floatingPanel.isOpen) {
+        floatingPanel.closeFloatingPanel();
+    }
     setSelectedEvent(null);
     setSelectedDate(date || currentDate);
     setIsModalOpen(true);
@@ -125,25 +132,25 @@ const Index = () => {
 
   const handleSaveEvent = async (formData: EventFormData) => {
     const dataToSave = { ...formData, id: selectedEvent?.id };
+    const action = dataToSave.id ? 'atualizado' : 'criado';
     try {
         if (dataToSave.id) {
             await updateEvent(dataToSave.id, dataToSave);
-            toast({ title: 'Sucesso', description: 'Evento atualizado com sucesso!' });
         } else {
             await createEvent(dataToSave);
-            toast({ title: 'Sucesso', description: 'Evento criado com sucesso!' });
         }
         setIsModalOpen(false);
+        toast({ title: 'Sucesso', description: `Evento ${action} com sucesso!` });
     } catch (error) {
-        toast({ title: 'Erro', description: 'Não foi possível salvar o evento.', variant: 'destructive' });
+        toast({ title: 'Erro', description: `Não foi possível salvar o evento.`, variant: 'destructive' });
     }
   };
 
   const handleDeleteEvent = async (id: string) => {
       try {
           await deleteEvent(id);
-          toast({ title: 'Sucesso', description: 'Evento excluído com sucesso!' });
           setIsModalOpen(false);
+          toast({ title: 'Sucesso', description: 'Evento excluído com sucesso!' });
       } catch (error) {
           toast({ title: 'Erro', description: 'Não foi possível excluir o evento.', variant: 'destructive' });
       }
@@ -208,7 +215,7 @@ const Index = () => {
   };
 
   return (
-    <FloatingPanel.Root>
+    <>
       <div className="min-h-screen bg-gray-50">
         <CalendarHeader
           currentDate={currentDate} onNavigate={handleNavigate} onDateSelect={handleDateSelect}
@@ -218,33 +225,31 @@ const Index = () => {
         />
         <CategoryFilters selectedCategories={selectedCategories} onToggleCategory={handleToggleCategory} />
         <div><div key={currentDate.getTime()} className={animationClass}>{renderView()}</div></div>
-
-        <CommandDialog open={isCommandOpen} onOpenChange={setIsCommandOpen}>
-          <CommandInput placeholder="Digite um comando ou pesquise..." />
-          <CommandList>
-            <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
-            <CommandGroup heading="Eventos">
-              {filteredEvents.map(event => (
-                <CommandItem key={event.id} onSelect={() => runCommand(() => handleEventClick(event))}>
-                  {event.title}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </CommandDialog>
-
-        {isModalOpen && (
-          <EventModal
-            isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}
-            onSave={canEdit ? handleSaveEvent : undefined}
-            onDelete={canEdit ? handleDeleteEvent : undefined}
-            event={selectedEvent} selectedDate={selectedDate}
-            categories={categories.filter(c => c.isActive)}
-          />
-        )}
-
-        {isAdmin && <AdminPanel isOpen={isAdminPanelOpen} onClose={() => setIsAdminPanelOpen(false)} />}
       </div>
+
+      <CommandDialog open={isCommandOpen} onOpenChange={setIsCommandOpen}>
+        <CommandInput placeholder="Digite um comando ou pesquise..." />
+        <CommandList>
+          <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
+          <CommandGroup heading="Eventos">
+            {filteredEvents.map(event => (
+              <CommandItem key={event.id} onSelect={() => runCommand(() => handleEventClick(event))}>
+                {event.title}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
+
+      <EventModal
+        isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}
+        onSave={canEdit ? handleSaveEvent : undefined}
+        onDelete={canEdit ? handleDeleteEvent : undefined}
+        event={selectedEvent} selectedDate={selectedDate}
+        categories={categories.filter(c => c.isActive)}
+      />
+
+      {isAdmin && <AdminPanel isOpen={isAdminPanelOpen} onClose={() => setIsAdminPanelOpen(false)} />}
 
       <FloatingPanel.Content>
         {({ activeDate, activeEvents }) =>
@@ -281,8 +286,14 @@ const Index = () => {
           )
         }
       </FloatingPanel.Content>
-    </FloatingPanel.Root>
+    </>
   );
 };
 
-export default Index;
+const IndexPageWithProvider = () => (
+  <FloatingPanel.Root>
+    <Index />
+  </FloatingPanel.Root>
+);
+
+export default IndexPageWithProvider;
