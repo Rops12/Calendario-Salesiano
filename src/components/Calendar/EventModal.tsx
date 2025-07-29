@@ -1,40 +1,83 @@
-// src/components/Calendar/EventModal.tsx
-import { useState, useEffect } from 'react';
-import { AnimatePresence, motion } from "framer-motion";
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarEvent, EventFormData, EventType, EventCategory } from '@/types/calendar';
-import { CategoryConfig } from '@/types/admin';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { X } from 'lucide-react';
-import { format } from 'date-fns'; // Importar format
+import {
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  Button,
+  FormControl,
+  FormLabel,
+  Input,
+  Select,
+  Textarea,
+  VStack,
+  HStack,
+  IconButton,
+  Tooltip,
+} from '@chakra-ui/react';
+import { FaTrash } from 'react-icons/fa';
+import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import React, { useEffect, useState } from 'react';
+import { useToast } from '@/components/ui/use-toast';
+import { Event } from '@/entities/Event';
+
+// Schema de validação com Zod
+const eventFormSchema = z.object({
+  title: z.string().min(3, { message: 'O título deve ter pelo menos 3 caracteres.' }),
+  description: z.string().optional(),
+  startDate: z.string().nonempty({ message: 'A data de início é obrigatória.' }),
+  endDate: z.string().optional(),
+  category: z.string().nonempty({ message: 'A categoria é obrigatória.' }),
+  eventType: z.enum(['normal', 'importante', 'feriado']),
+});
+
+type EventFormData = z.infer<typeof eventFormSchema>;
 
 interface EventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave?: (data: EventFormData) => void;
-  onDelete?: (id: string) => void;
-  event?: CalendarEvent | null;
-  selectedDate?: Date;
-  categories: CategoryConfig[];
+  onSave: (eventData: EventFormData, id?: number) => void;
+  onDelete?: (id: number) => void;
+  event?: Event | null;
+  selectedDate?: Date | null;
+  categories: { value: string; label: string }[];
 }
 
-const eventTypeOptions: { value: EventType, label: string, description: string }[] = [
-  { value: 'normal', label: 'Normal', description: 'Atividade comum do dia a dia.' },
-  { value: 'evento', label: 'Evento Especial', description: 'Grande evento que envolve vários segmentos.' },
-  { value: 'feriado', label: 'Feriado', description: 'Feriado oficial, sem atividades letivas.' },
-  { value: 'recesso', label: 'Recesso', description: 'Pausa nas atividades, como emendas de feriado.' },
-];
+// Função auxiliar para obter os dados iniciais do formulário
+// Movida para fora do componente para não ser recriada a cada renderização
+const getInitialFormData = (
+  event: Event | null | undefined,
+  selectedDate: Date | null | undefined,
+  categories: { value: string; label: string }[]
+): EventFormData => {
+  const defaultCategory = categories[0]?.value || '';
+  const date = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
 
-const TRANSITION = { type: "spring", bounce: 0.1, duration: 0.4 };
-const variants = {
-    hidden: { opacity: 0, scale: 0.95 },
-    visible: { opacity: 1, scale: 1 },
+  if (event) {
+    return {
+      title: event.title,
+      description: event.description || '',
+      startDate: format(new Date(event.startDate), 'yyyy-MM-dd'),
+      endDate: event.endDate ? format(new Date(event.endDate), 'yyyy-MM-dd') : '',
+      category: event.category,
+      eventType: event.eventType,
+    };
+  }
+
+  return {
+    title: '',
+    description: '',
+    startDate: date,
+    endDate: '',
+    category: defaultCategory,
+    eventType: 'normal',
+  };
 };
 
 export function EventModal({
@@ -44,189 +87,147 @@ export function EventModal({
   onDelete,
   event,
   selectedDate,
-  categories
+  categories,
 }: EventModalProps) {
   const { toast } = useToast();
-  const [formData, setFormData] = useState<EventFormData>({
-    title: '',
-    description: '',
-    startDate: '',
-    endDate: '',
-    category: categories[0]?.value || '',
-    eventType: 'normal'
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<EventFormData>({
+    resolver: zodResolver(eventFormSchema),
   });
 
+  // Efeito para resetar o formulário APENAS quando o modal é aberto
+  // ou quando o evento/data selecionada muda.
   useEffect(() => {
-    const defaultCategory = categories[0]?.value || '';
-    if (event) {
-      setFormData({
-        title: event.title,
-        description: event.description || '',
-        startDate: event.startDate,
-        endDate: event.endDate || '',
-        category: event.category,
-        eventType: event.eventType
-      });
-    } else if (selectedDate) {
-      setFormData({
-        title: '',
-        description: '',
-        // CORREÇÃO: Usar format para evitar problemas de fuso horário
-        startDate: format(selectedDate, 'yyyy-MM-dd'),
-        endDate: '',
-        category: defaultCategory,
-        eventType: 'normal'
-      });
-    } else {
-      setFormData({
-        title: '',
-        description: '',
-        startDate: format(new Date(), 'yyyy-MM-dd'),
-        endDate: '',
-        category: defaultCategory,
-        eventType: 'normal'
-      });
+    if (isOpen) {
+      const initialData = getInitialFormData(event, selectedDate, categories);
+      reset(initialData);
     }
-  }, [event, selectedDate, isOpen, categories]);
+  }, [isOpen, event, selectedDate, categories, reset]);
 
-  useEffect(() => {
-      const handleKeyDown = (event: KeyboardEvent) => {
-          if (event.key === "Escape") onClose();
-      };
-      if (isOpen) {
-          document.addEventListener("keydown", handleKeyDown);
-      }
-      return () => {
-          document.removeEventListener("keydown", handleKeyDown);
-      };
-  }, [isOpen, onClose]);
-
-  const handleCategoryChange = (value: EventCategory) => {
-    setFormData(prev => ({ ...prev, category: value }));
+  const handleFormSubmit: SubmitHandler<EventFormData> = (data) => {
+    onSave(data, event?.id);
+    onClose();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.title.trim()) {
-      toast({ title: "Erro", description: "O título do evento é obrigatório.", variant: "destructive" });
-      return;
-    }
-    if (onSave) {
-      onSave(formData);
-      onClose();
-    }
-  };
-
-  const isReadOnly = !onSave && !onDelete;
-
-  const handleDelete = () => {
-    if (event && onDelete) {
+  const handleDeleteClick = () => {
+    if (event?.id && onDelete) {
       onDelete(event.id);
       onClose();
     }
   };
 
-  const handleEventTypeChange = (value: EventType) => {
-    setFormData(prev => ({...prev, eventType: value}));
-  }
+  const handleClose = () => {
+    reset(); // Limpa o formulário ao fechar manualmente
+    onClose();
+  };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          onClick={onClose}
-        >
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-          />
-          <motion.div
-            className="relative z-10 max-h-[90vh] w-full max-w-lg overflow-hidden rounded-2xl border bg-background shadow-lg flex flex-col"
-            variants={variants}
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
-            transition={TRANSITION}
-            role="dialog"
-            aria-modal="true"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
-              <header className="flex items-center justify-between p-4 border-b shrink-0">
-                <h3 className="font-semibold text-lg">{isReadOnly ? 'Visualizar Evento' : (event ? 'Editar Evento' : 'Novo Evento')}</h3>
-                <Button type="button" variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-full">
-                  <X className="h-4 w-4" />
-                  <span className="sr-only">Fechar</span>
-                </Button>
-              </header>
+    <Modal isOpen={isOpen} onClose={handleClose} isCentered>
+      <ModalOverlay />
+      <ModalContent as="form" onSubmit={handleSubmit(handleFormSubmit)}>
+        <ModalHeader>{event ? 'Editar Evento' : 'Criar Novo Evento'}</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody>
+          <VStack spacing={4}>
+            <FormControl isInvalid={!!errors.title}>
+              <FormLabel>Título</FormLabel>
+              <Controller
+                name="title"
+                control={control}
+                render={({ field }) => <Input {...field} />}
+              />
+              {errors.title && <p style={{ color: 'red', fontSize: '0.8rem' }}>{errors.title.message}</p>}
+            </FormControl>
 
-              <div className="py-4 px-4 space-y-4 flex-grow overflow-y-auto">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Título</Label>
-                  <Input id="title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Digite o título do evento" required disabled={isReadOnly} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Descrição</Label>
-                  <Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Digite a descrição do evento (opcional)" rows={3} disabled={isReadOnly} />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="startDate">Data de Início</Label>
-                    <Input id="startDate" type="date" value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} required disabled={isReadOnly} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="endDate">Data de Fim (opcional)</Label>
-                    <Input id="endDate" type="date" value={formData.endDate} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} min={formData.startDate} disabled={isReadOnly} />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="category">Segmento</Label>
-                  <Select value={formData.category} onValueChange={handleCategoryChange} disabled={isReadOnly}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um segmento" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.value} value={category.value}>
-                          {category.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-3">
-                  <Label>Tipo de Ocasião</Label>
-                  <RadioGroup value={formData.eventType} onValueChange={handleEventTypeChange} className="space-y-2" disabled={isReadOnly}>
-                    {eventTypeOptions.map(option => (
-                      <Label key={option.value} className={cn("flex items-center gap-4 p-3 rounded-lg border transition-all cursor-pointer", formData.eventType === option.value ? "bg-muted border-primary ring-2 ring-primary/50" : "hover:bg-muted/50")}>
-                        <RadioGroupItem value={option.value} />
-                        <div>
-                          <p className="font-medium">{option.label}</p>
-                          <p className="text-sm text-muted-foreground">{option.description}</p>
-                        </div>
-                      </Label>
+            <FormControl>
+              <FormLabel>Descrição</FormLabel>
+              <Controller
+                name="description"
+                control={control}
+                render={({ field }) => <Textarea {...field} />}
+              />
+            </FormControl>
+
+            <HStack width="100%">
+              <FormControl isInvalid={!!errors.startDate}>
+                <FormLabel>Data de Início</FormLabel>
+                <Controller
+                  name="startDate"
+                  control={control}
+                  render={({ field }) => <Input type="date" {...field} />}
+                />
+                 {errors.startDate && <p style={{ color: 'red', fontSize: '0.8rem' }}>{errors.startDate.message}</p>}
+              </FormControl>
+              <FormControl>
+                <FormLabel>Data de Fim</FormLabel>
+                <Controller
+                  name="endDate"
+                  control={control}
+                  render={({ field }) => <Input type="date" {...field} />}
+                />
+              </FormControl>
+            </HStack>
+
+            <FormControl isInvalid={!!errors.category}>
+              <FormLabel>Categoria</FormLabel>
+              <Controller
+                name="category"
+                control={control}
+                render={({ field }) => (
+                  <Select {...field}>
+                    {categories.map((cat) => (
+                      <option key={cat.value} value={cat.value}>
+                        {cat.label}
+                      </option>
                     ))}
-                  </RadioGroup>
-                </div>
-              </div>
+                  </Select>
+                )}
+              />
+               {errors.category && <p style={{ color: 'red', fontSize: '0.8rem' }}>{errors.category.message}</p>}
+            </FormControl>
 
-              <footer className="flex justify-between w-full p-4 border-t bg-background shrink-0">
-                <div>
-                  {!isReadOnly && event && onDelete && (<Button type="button" variant="destructive" onClick={handleDelete}>Excluir</Button>)}
-                </div>
-                <div className="flex gap-2">
-                  <Button type="button" variant="outline" onClick={onClose}>{isReadOnly ? 'Fechar' : 'Cancelar'}</Button>
-                  {!isReadOnly && onSave && (<Button type="submit">{event ? 'Atualizar' : 'Criar'}</Button>)}
-                </div>
-              </footer>
-            </form>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+            <FormControl>
+              <FormLabel>Tipo de Evento</FormLabel>
+              <Controller
+                name="eventType"
+                control={control}
+                render={({ field }) => (
+                  <Select {...field}>
+                    <option value="normal">Normal</option>
+                    <option value="importante">Importante</option>
+                    <option value="feriado">Feriado</option>
+                  </Select>
+                )}
+              />
+            </FormControl>
+          </VStack>
+        </ModalBody>
+
+        <ModalFooter>
+          <HStack justify="space-between" width="100%">
+            {event && onDelete && (
+                 <Tooltip label="Excluir evento" placement="top">
+                 <IconButton
+                   aria-label="Excluir evento"
+                   icon={<FaTrash />}
+                   colorScheme="red"
+                   onClick={handleDeleteClick}
+                 />
+               </Tooltip>
+            )}
+            <HStack marginLeft="auto">
+                <Button variant="ghost" onClick={handleClose}>Cancelar</Button>
+                <Button colorScheme="blue" type="submit">
+                    Salvar
+                </Button>
+            </HStack>
+          </HStack>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
   );
 }

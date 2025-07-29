@@ -1,68 +1,96 @@
-// src/hooks/useCalendarEvents.ts
-import { useState, useEffect } from 'react';
-import { CalendarEvent, EventFormData } from '@/types/calendar';
-import { ServiceContainer } from '@/services/ServiceContainer';
+import { useState, useEffect, useCallback } from 'react';
+import { useToast } from '@/components/ui/use-toast';
+import { Event, CreateEventDTO, UpdateEventDTO } from '@/entities/Event';
+import { services } from '@/services/ServiceContainer';
 
-export function useCalendarEvents() {
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
+export const useCalendarEvents = () => {
+  const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  const eventService = ServiceContainer.getInstance().eventService;
+  const { toast } = useToast();
+
+  const fetchEvents = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const fetchedEvents = await services.event.getAll();
+      setEvents(fetchedEvents);
+    } catch (error) {
+      console.error('Failed to fetch events:', error);
+      toast({
+        title: 'Erro ao carregar eventos',
+        description: 'Não foi possível buscar os eventos. Tente novamente mais tarde.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
 
   useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        setIsLoading(true);
-        const existingEvents = await eventService.getEvents();
-        setEvents(existingEvents);
-      } catch (error) {
-        console.error('Error fetching events:', error);
-        setEvents([]); // Em caso de erro, define como um array vazio
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchEvents();
-  }, [eventService]);
+  }, [fetchEvents]);
 
-  const createEvent = async (data: EventFormData) => {
+  const createEvent = useCallback(async (eventData: CreateEventDTO) => {
     try {
-      const newEvent = await eventService.createEvent(data);
-      setEvents(prev => [...prev, newEvent].sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()));
+      const newEvent = await services.event.create(eventData);
+      setEvents((prevEvents) => [...prevEvents, newEvent]);
+      toast({
+        title: 'Sucesso!',
+        description: 'Evento criado com sucesso.',
+      });
     } catch (error) {
-      console.error('Error creating event:', error);
-      throw error;
+      console.error('Failed to create event:', error);
+      toast({
+        title: 'Erro ao criar evento',
+        description: 'Não foi possível salvar o novo evento.',
+        variant: 'destructive',
+      });
     }
-  };
+  }, [toast]);
 
-  const updateEvent = async (id: string, data: EventFormData) => {
+  const updateEvent = useCallback(async (id: number, eventData: UpdateEventDTO) => {
     try {
-      const updatedEvent = await eventService.updateEvent(id, data);
-      setEvents(prev => prev.map(event => 
-        event.id === id ? updatedEvent : event
-      ));
+      const updatedEvent = await services.event.update(id, eventData);
+      setEvents((prevEvents) =>
+        prevEvents.map((event) => (event.id === id ? updatedEvent : event))
+      );
+      toast({
+        title: 'Sucesso!',
+        description: 'Evento atualizado com sucesso.',
+      });
     } catch (error) {
-      console.error('Error updating event:', error);
-      throw error;
+      console.error('Failed to update event:', error);
+      toast({
+        title: 'Erro ao atualizar evento',
+        description: 'Não foi possível salvar as alterações.',
+        variant: 'destructive',
+      });
     }
-  };
+  }, [toast]);
 
-  const deleteEvent = async (id: string) => {
+  const deleteEvent = useCallback(async (id: number) => {
     try {
-      await eventService.deleteEvent(id);
-      setEvents(prev => prev.filter(event => event.id !== id));
+      await services.event.delete(id);
+      setEvents((prevEvents) => prevEvents.filter((event) => event.id !== id));
+      toast({
+        title: 'Sucesso!',
+        description: 'Evento excluído com sucesso.',
+      });
     } catch (error) {
-      console.error('Error deleting event:', error);
-      throw error;
+      console.error('Failed to delete event:', error);
+      toast({
+        title: 'Erro ao excluir evento',
+        description: 'Não foi possível excluir o evento.',
+        variant: 'destructive',
+      });
     }
-  };
+  }, [toast]);
 
   return {
     events,
     isLoading,
+    fetchEvents,
     createEvent,
     updateEvent,
     deleteEvent,
   };
-}
+};

@@ -1,50 +1,83 @@
-// src/hooks/useCategories.tsx
-import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
-import { CategoryConfig } from '@/types/admin';
-import { SupabaseAdminService } from '@/services/supabase/SupabaseAdminService';
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useMemo,
+  useEffect,
+  useCallback,
+  ReactNode,
+} from 'react';
+import { services } from '@/services/ServiceContainer';
+import { useToast } from '@/components/ui/use-toast';
+import { Category } from '@/entities/Category';
 
 interface CategoriesContextType {
-  categories: CategoryConfig[];
+  categories: { value: string; label: string }[];
+  selectedCategories: string[];
+  handleCategoryChange: (categoryValue: string) => void;
   isLoading: boolean;
-  getCategory: (value: string) => CategoryConfig | undefined;
-  refetchCategories: () => Promise<void>; // Função para recarregar
+  fetchCategories: () => Promise<void>;
 }
 
 const CategoriesContext = createContext<CategoriesContextType | undefined>(undefined);
-const adminService = new SupabaseAdminService();
 
 export const CategoriesProvider = ({ children }: { children: ReactNode }) => {
-  const [categories, setCategories] = useState<CategoryConfig[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
-  // Usamos useCallback para evitar recriações desnecessárias da função
   const fetchCategories = useCallback(async () => {
     setIsLoading(true);
     try {
-      const fetchedCategories = await adminService.getCategories();
+      const fetchedCategories = await services.category.getAll();
       setCategories(fetchedCategories);
     } catch (error) {
-      console.error("Failed to fetch categories:", error);
-      setCategories([]); // Garante que o estado não fique inconsistente em caso de erro
+      console.error('Failed to fetch categories:', error);
+      toast({
+        title: 'Erro ao carregar categorias',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
 
-  const getCategory = (value: string) => {
-    return categories.find(cat => cat.value === value);
-  };
+  const handleCategoryChange = useCallback((categoryValue: string) => {
+    setSelectedCategories((prev) => {
+      const isSelected = prev.includes(categoryValue);
+      if (isSelected) {
+        return prev.filter((c) => c !== categoryValue);
+      } else {
+        return [...prev, categoryValue];
+      }
+    });
+  }, []);
 
-  const value = {
-    categories,
-    isLoading,
-    getCategory,
-    refetchCategories: fetchCategories, // Expondo a função de recarregamento
-  };
+  const formattedCategories = useMemo(() => {
+    return categories.map((cat) => ({ value: cat.name, label: cat.name }));
+  }, [categories]);
+
+  const value = useMemo(
+    () => ({
+      categories: formattedCategories,
+      selectedCategories,
+      handleCategoryChange,
+      isLoading,
+      fetchCategories,
+    }),
+    [
+      formattedCategories,
+      selectedCategories,
+      handleCategoryChange,
+      isLoading,
+      fetchCategories,
+    ]
+  );
 
   return (
     <CategoriesContext.Provider value={value}>
