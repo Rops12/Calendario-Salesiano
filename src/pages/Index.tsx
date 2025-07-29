@@ -1,3 +1,4 @@
+// src/pages/Index.tsx
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { format, parse, isValid } from 'date-fns';
@@ -49,7 +50,7 @@ const Index = () => {
 
   const [currentView, setCurrentView] = useState<CalendarView>('month');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  
+
   useEffect(() => {
     if (categories.length > 0 && selectedCategories.length === 0) {
       setSelectedCategories(categories.filter(c => c.isActive).map(c => c.value));
@@ -93,40 +94,43 @@ const Index = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const handleNavigate = (direction: 'next' | 'prev') => {
-    setTransitionDirection(direction);
-    const newDate = new Date(currentDate);
-    const offset = direction === 'next' ? 1 : -1;
-    if (currentView === 'month') newDate.setMonth(newDate.getMonth() + offset);
-    else if (currentView === 'week') newDate.setDate(newDate.getDate() + (7 * offset));
-    else newDate.setDate(newDate.getDate() + offset);
+  const handleNavigate = (direction: 'next' | 'prev' | 'today') => {
+    setTransitionDirection(direction === 'today' ? null : direction);
+    const newDate = direction === 'today' ? new Date() : new Date(currentDate);
+    if (direction !== 'today') {
+      const offset = direction === 'next' ? 1 : -1;
+      if (currentView === 'month') newDate.setMonth(newDate.getMonth() + offset);
+      else if (currentView === 'week') newDate.setDate(newDate.getDate() + (7 * offset));
+      else newDate.setDate(newDate.getDate() + offset);
+    }
     navigate(`/date/${format(newDate, 'yyyy-MM-dd')}`);
   };
 
-  const handleDateSelect = (date: Date) => {
-    navigate(`/date/${format(date, 'yyyy-MM-dd')}`);
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      navigate(`/date/${format(date, 'yyyy-MM-dd')}`);
+    }
   };
 
   const handleEventClick = (event: CalendarEvent) => {
     setSelectedEvent(event);
     setIsModalOpen(true);
   };
-  
+
   const handleNewEvent = (date?: Date) => {
     setSelectedEvent(null);
     setSelectedDate(date || currentDate);
     setIsModalOpen(true);
   };
 
-  // --- CORREÇÃO AQUI ---
-  // Ajustado para usar `startDate` e `endDate` de acordo com a tipagem `EventFormData`
-  const handleSaveEvent = async (formData: EventFormData & { id?: string }) => {
+  const handleSaveEvent = async (formData: EventFormData) => {
+    const dataToSave = { ...formData, id: selectedEvent?.id };
     try {
-        if (formData.id) {
-            await updateEvent(formData.id, formData);
+        if (dataToSave.id) {
+            await updateEvent(dataToSave.id, dataToSave);
             toast({ title: 'Sucesso', description: 'Evento atualizado com sucesso!' });
         } else {
-            await createEvent(formData);
+            await createEvent(dataToSave);
             toast({ title: 'Sucesso', description: 'Evento criado com sucesso!' });
         }
         setIsModalOpen(false);
@@ -134,7 +138,6 @@ const Index = () => {
         toast({ title: 'Erro', description: 'Não foi possível salvar o evento.', variant: 'destructive' });
     }
   };
-  // --- FIM DA CORREÇÃO ---
 
   const handleDeleteEvent = async (id: string) => {
       try {
@@ -146,18 +149,16 @@ const Index = () => {
       }
   };
 
-  // --- CORREÇÃO AQUI ---
-  // Ajustado para usar `startDate` e `endDate`
   const handleEventDrop = async (eventId: string, newDateStr: string) => {
     const event = events.find(e => e.id === eventId);
     if (event) {
         const newStartDate = new Date(newDateStr);
         const oldStartDate = new Date(event.startDate);
         const oldEndDate = event.endDate ? new Date(event.endDate) : oldStartDate;
-        
+
         const duration = oldEndDate.getTime() - oldStartDate.getTime();
         const newEndDate = new Date(newStartDate.getTime() + duration);
-        
+
         await handleSaveEvent({
             ...event,
             startDate: newStartDate.toISOString().split('T')[0],
@@ -165,8 +166,7 @@ const Index = () => {
         });
     }
   };
-  // --- FIM DA CORREÇÃO ---
-  
+
   const handleToggleCategory = (categoryValue: string) => {
     setSelectedCategories(prev =>
       prev.includes(categoryValue)
@@ -185,13 +185,13 @@ const Index = () => {
     if (orderA !== orderB) return orderA - orderB;
     return a.title.localeCompare(b.title);
   }), [events, searchQuery, selectedCategories]);
-  
+
   const runCommand = (command: () => void) => {
     setIsCommandOpen(false);
     command();
   };
 
-  const animationClass = 
+  const animationClass =
     transitionDirection === 'next' ? 'animate-[slide-in-from-right_0.3s_ease-out]' :
     transitionDirection === 'prev' ? 'animate-[slide-in-from-left_0.3s_ease-out]' :
     'animate-fade-in';
@@ -233,14 +233,16 @@ const Index = () => {
           </CommandList>
         </CommandDialog>
 
-        <EventModal
-          isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}
-          onSave={canEdit ? handleSaveEvent : undefined}
-          onDelete={canEdit ? handleDeleteEvent : undefined}
-          event={selectedEvent} selectedDate={selectedDate}
-          categories={categories.filter(c => c.isActive)}
-        />
-        
+        {isModalOpen && (
+          <EventModal
+            isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}
+            onSave={canEdit ? handleSaveEvent : undefined}
+            onDelete={canEdit ? handleDeleteEvent : undefined}
+            event={selectedEvent} selectedDate={selectedDate}
+            categories={categories.filter(c => c.isActive)}
+          />
+        )}
+
         {isAdmin && <AdminPanel isOpen={isAdminPanelOpen} onClose={() => setIsAdminPanelOpen(false)} />}
       </div>
 
@@ -255,7 +257,7 @@ const Index = () => {
               <div className="py-4 px-4 space-y-3 flex-grow overflow-y-auto">
                 {activeEvents.length > 0 ? (
                   activeEvents.map(event => (
-                    <EventCard 
+                    <EventCard
                       key={event.id}
                       event={event}
                       onClick={() => handleEventClick(event)}
