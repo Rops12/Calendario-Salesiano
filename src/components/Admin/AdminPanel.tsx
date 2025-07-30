@@ -1,40 +1,32 @@
 // src/components/Admin/AdminPanel.tsx
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { CategoryManagement } from "@/components/Admin/CategoryManagement.tsx"; 
-import { UserManagement } from "@/components/Admin/UserManagement.tsx"; // Corrected import
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { CategoryManagement } from "@/components/Admin/CategoryManagement.tsx";
+import { UserManagement } from "@/components/Admin/UserManagement.tsx";
+import { ActivityLogs } from "@/components/Admin/ActivityLogs.tsx";
+import { Users, Palette, Activity } from 'lucide-react';
 
-interface AdminPanelProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-export function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
+// Apenas "export default" foi adicionado aqui
+export default function AdminPanel() {
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[650px] max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Painel Administrativo</DialogTitle>
-          <DialogDescription>
-            Gerencie as categorias e permissões de usuários do calendário.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="flex-grow overflow-y-auto pr-4 -mr-4 space-y-8 py-4">
-          <div>
-            <h3 className="text-lg font-medium mb-4">Gerenciar Categorias</h3>
+    <div className="p-4 sm:p-6 bg-gray-50 h-full">
+      <Tabs defaultValue="users" className="flex flex-col h-full">
+        <TabsList className="grid w-full grid-cols-3 mb-6 bg-gray-200">
+          <TabsTrigger value="users" className="gap-2"><Users className="h-4 w-4" /> Usuários</TabsTrigger>
+          <TabsTrigger value="categories" className="gap-2"><Palette className="h-4 w-4" /> Categorias</TabsTrigger>
+          <TabsTrigger value="logs" className="gap-2"><Activity className="h-4 w-4" /> Atividades</TabsTrigger>
+        </TabsList>
+        <div className="flex-grow overflow-y-auto">
+          <TabsContent value="users">
+            <UserManagement />
+          </TabsContent>
+          <TabsContent value="categories">
             <CategoryManagement />
-          </div>
-          <div>
-            <h3 className="text-lg font-medium mb-4">Gerenciar Usuários</h3>
-            <UserManagement /> {/* Corrected component name */}
-          </div>
+          </TabsContent>
+          <TabsContent value="logs">
+            <ActivityLogs />
+          </TabsContent>
         </div>
-
-        <DialogFooter className="mt-auto pt-4">
-          <Button variant="outline" onClick={onClose}>Fechar</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </Tabs>
+    </div>
   );
 }
