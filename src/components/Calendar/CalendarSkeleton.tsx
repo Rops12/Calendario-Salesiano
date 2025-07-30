@@ -1,6 +1,8 @@
+// src/components/Calendar/CalendarSkeleton.tsx
 import { Skeleton } from '@/components/ui/skeleton';
 
-export function CalendarSkeleton() {
+// Apenas "export default" foi adicionado aqui
+export default function CalendarSkeleton() {
   const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
   return (
