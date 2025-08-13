@@ -15,15 +15,15 @@ import { useCategories } from '@/hooks/useCategories';
 import { useAuth } from '@/hooks/useAuth';
 
 // Componentes
-import CalendarHeader from '@/components/Calendar/CalendarHeader';
-import CalendarGrid from '@/components/Calendar/CalendarGrid';
+import { CalendarHeader } from '@/components/Calendar/CalendarHeader';
+import { CalendarGrid } from '@/components/Calendar/CalendarGrid';
 import { EventModal } from '@/components/Calendar/EventModal';
 import { CategoryFilters } from '@/components/Calendar/CategoryFilters';
-import ViewSwitcher from '@/components/Calendar/ViewSwitcher';
-import AgendaView from '@/components/Calendar/AgendaView';
-import CalendarSkeleton from '@/components/Calendar/CalendarSkeleton';
+import { ViewSwitcher } from '@/components/Calendar/ViewSwitcher';
+import { AgendaView } from '@/components/Calendar/AgendaView';
+import { CalendarSkeleton } from '@/components/Calendar/CalendarSkeleton';
 import { Sidebar } from '@/components/ui/sidebar';
-import AdminPanel from '@/components/Admin/AdminPanel';
+import { AdminPanel } from '@/components/Admin/AdminPanel';
 import { Toaster } from '@/components/ui/toaster'; // Import corrigido
 
 // Entidades e Tipos
