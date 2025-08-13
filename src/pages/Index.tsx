@@ -25,6 +25,7 @@ import CalendarSkeleton from '@/components/Calendar/CalendarSkeleton';
 import { Sidebar } from '@/components/ui/sidebar';
 import AdminPanel from '@/components/Admin/AdminPanel';
 import { Toaster } from '@/components/ui/toaster'; // Import corrigido
+import { FloatingPanelRoot } from '@/components/ui/floating-panel';
 
 // Entidades e Tipos
 import { Event } from '@/entities/Event';
@@ -157,14 +158,16 @@ export default function Index() {
 
           <Box flex="1">
             {view === 'monthly' && (
-              <CalendarGrid
-                currentDate={currentDate}
-                events={filteredEvents}
-                onDateClick={handleDateClick}
-                onEventClick={handleEventClick}
-                onEventDrop={handleEventDrop}
-                isAdmin={!!isAdmin}
-              />
+              <FloatingPanelRoot>
+                <CalendarGrid
+                  currentDate={currentDate}
+                  events={filteredEvents}
+                  onDateClick={handleDateClick}
+                  onEventClick={handleEventClick}
+                  onEventDrop={handleEventDrop}
+                  isAdmin={!!isAdmin}
+                />
+              </FloatingPanelRoot>
             )}
             {view === 'agenda' && <AgendaView events={filteredEvents} onEventClick={handleEventClick} />}
             {/* Adicionar outras visualizações como WeekView aqui */}

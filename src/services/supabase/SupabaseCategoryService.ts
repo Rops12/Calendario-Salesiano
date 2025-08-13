@@ -1,18 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
 import { ICategoryService } from '../interfaces/ICategoryService';
-import { Category } from '@/entities/Category';
+import { CategoryConfig } from '@/types/admin';
 
 export class SupabaseCategoryService implements ICategoryService {
-  private mapToCategory(data: any): Category {
-    return {
-      id: data.id,
-      name: data.name,
-      // Se a sua tabela usa 'label' e 'value', ajuste aqui.
-      // Assumindo que 'name' é o identificador único.
-    };
-  }
-
-  async getAll(): Promise<Category[]> {
+  async getAll(): Promise<CategoryConfig[]> {
     const { data, error } = await supabase.from('event_categories').select('*');
     if (error) throw error;
     // O Supabase já deve retornar os dados no formato correto (label, value, color)

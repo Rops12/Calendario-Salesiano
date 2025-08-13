@@ -11,7 +11,7 @@ export const useCalendarEvents = () => {
   const fetchEvents = useCallback(async () => {
     setIsLoading(true);
     try {
-      const fetchedEvents = await services.event.getAll();
+      const fetchedEvents = await services.event.getEvents();
       setEvents(fetchedEvents);
     } catch (error) {
       console.error('Failed to fetch events:', error);

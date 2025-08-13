@@ -9,10 +9,10 @@ import React, {
 } from 'react';
 import { services } from '@/services/ServiceContainer';
 import { useToast } from '@/components/ui/use-toast';
-import { Category } from '@/entities/Category';
+import { CategoryConfig } from '@/types/admin';
 
 interface CategoriesContextType {
-  categories: { value: string; label: string }[];
+  categories: CategoryConfig[];
   selectedCategories: string[];
   handleCategoryChange: (categoryValue: string) => void;
   isLoading: boolean;
@@ -22,7 +22,7 @@ interface CategoriesContextType {
 const CategoriesContext = createContext<CategoriesContextType | undefined>(undefined);
 
 export const CategoriesProvider = ({ children }: { children: ReactNode }) => {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<CategoryConfig[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -58,20 +58,16 @@ export const CategoriesProvider = ({ children }: { children: ReactNode }) => {
     });
   }, []);
 
-  const formattedCategories = useMemo(() => {
-    return categories.map((cat) => ({ value: cat.name, label: cat.name }));
-  }, [categories]);
-
   const value = useMemo(
     () => ({
-      categories: formattedCategories,
+      categories,
       selectedCategories,
       handleCategoryChange,
       isLoading,
       fetchCategories,
     }),
     [
-      formattedCategories,
+      categories,
       selectedCategories,
       handleCategoryChange,
       isLoading,
